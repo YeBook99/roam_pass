@@ -8,7 +8,7 @@
 - [x] H-1 커밋 템플릿 · git 훅
 - [x] H-2 과제 분석 가이드 · 질문 답변 초안
 - [x] H-3 CLAUDE.md · 진행/결정/학습 기록
-- [ ] H-4 Claude Code 훅 · 스킬
+- [x] H-4 Claude Code 훅 · 스킬
 
 ## 1. 기반
 - [ ] B-1 backend/frontend 스캐폴딩, docker-compose(MySQL 8.4)
