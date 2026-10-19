@@ -1,32 +1,39 @@
-# --- 비밀값: 절대 커밋 금지 (과제 감점 항목) ---
+# 시크릿 — 절대 커밋 금지 (.env.example만 허용)
 .env
 .env.*
 !.env.example
 *.pem
 *.key
 
-# --- 과제 원문 (저장소에 포함하지 않음) ---
-과제전형_개발자_SIM.pdf
+# 과제 원문 PDF는 회사 자료이므로 저장소에 포함하지 않음
+*.pdf
 
-# --- OS / IDE ---
-.DS_Store
-.idea/
-.vscode/
-*.iml
-
-# --- backend (Gradle / Spring) ---
+# Backend (Gradle / IntelliJ)
 backend/build/
 backend/.gradle/
 backend/out/
-backend/bin/
+*.iml
+.idea/
 
-# --- frontend (Next.js) ---
+# Frontend (Next.js)
 frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
-frontend/*.tsbuildinfo
 
-# --- Claude Code 개인 설정 ---
+# e2e (Playwright)
+e2e/node_modules/
+e2e/playwright-report/
+e2e/test-results/
+e2e/compose.log
+
+# PR 첨부용 화면 캡처 (Playwright MCP 출력) — PR 웹 화면에 드래그해서 첨부
+.mr-assets/
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Claude Code 개인 설정
 .claude/settings.local.json
-.claude/.cache/
