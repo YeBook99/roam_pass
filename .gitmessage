@@ -1,0 +1,21 @@
+# <type>(<scope>): <제목>
+#   - 제목은 한국어 72자 이내, 마침표 없이 "무엇을 했는지" 한 줄로
+#   - 예) feat(payment): 결제 승인 통지 중복 처리 방지
+#
+# type : feat | fix | test | refactor | docs | chore | build | deploy | perf | style
+# scope: plan | order | payment | issuance | usim | tracking | refund | admin
+#        mock-pg | mock-supplier | job | web | db | infra | deploy | harness | docs | repo
+#
+# ---------------- 본문 (feat / fix / refactor / test 는 '왜:' '검증:' 필수) ----------------
+# 왜:
+# - 이 변경이 필요한 이유 (요구사항 / 버그 / 설계 판단)
+#
+# 무엇을:
+# - 바뀐 내용 (파일 나열 X, 동작 단위로)
+#
+# 검증:
+# - 어떤 테스트 / 수동 확인으로 확인했는지 (없으면 "없음 - 이유")
+#
+# 관련: REQ-2.3, Q3   (docs/GUIDE.md 의 요구사항 ID / README 8개 질문 번호)
+#
+# 커밋 원칙: 한 커밋 = 한 기능 / 한 판단. squash 금지 (작업 흐름이 평가 대상).

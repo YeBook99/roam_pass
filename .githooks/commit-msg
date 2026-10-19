@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""커밋 메시지가 .gitmessage 템플릿 규칙을 지키는지 검사한다."""
+import re
+import sys
+
+TYPES = "feat|fix|test|refactor|docs|chore|build|deploy|perf|style"
+HEADER = re.compile(rf"^({TYPES})(\([a-z0-9-]+\))?!?: \S.*$")
+NEEDS_BODY = {"feat", "fix", "refactor", "test"}
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    lines = [l.rstrip("\n") for l in f if not l.startswith("#")]
+
+while lines and not lines[0].strip():
+    lines.pop(0)
+if not lines:
+    sys.exit(0)  # 빈 메시지는 git 이 알아서 중단
+
+header = lines[0]
+if header.startswith(("Merge ", "Revert ", "fixup! ")):
+    sys.exit(0)
+
+errors = []
+if not HEADER.match(header):
+    errors.append(f"제목 형식 오류: '{header}'\n  -> <type>(<scope>): <제목>  (type: {TYPES.replace('|', ', ')})")
+elif len(header) > 72:
+    errors.append(f"제목이 너무 깁니다 ({len(header)}자 > 72자)")
+if header.rstrip().endswith("."):
+    errors.append("제목 끝에 마침표를 붙이지 마세요")
+if len(lines) > 1 and lines[1].strip():
+    errors.append("제목 다음 줄은 비워 두세요")
+
+ctype = header.split("(")[0].split(":")[0].rstrip("!")
+body = "\n".join(lines[1:])
+if ctype in NEEDS_BODY:
+    for section in ("왜:", "검증:"):
+        if section not in body:
+            errors.append(f"{ctype} 커밋은 본문에 '{section}' 섹션이 필요합니다 (.gitmessage 참고)")
+
+if errors:
+    print("\n[commit-msg] 커밋 메시지가 템플릿 규칙을 어겼습니다:", file=sys.stderr)
+    for e in errors:
+        print("  - " + e, file=sys.stderr)
+    print("  템플릿: .gitmessage\n", file=sys.stderr)
+    sys.exit(1)

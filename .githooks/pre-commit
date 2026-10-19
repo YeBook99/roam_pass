@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+"""스테이징된 변경에 비밀값(.env, 키, 비밀번호)이 섞였는지 검사한다.
+
+과제 감점 항목: "시크릿(DB 비밀번호 · API 키 · 서명 키)이 저장소에 커밋됨"
+정말 괜찮은 줄(테스트용 더미 값 등)은 줄 끝에 `allow-secret` 주석을 붙이면 통과한다.
+"""
+import re
+import subprocess
+import sys
+
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True).stdout
+
+BLOCKED_FILE = re.compile(r"(^|/)(\.env(\.(?!example$)[^/]+)?|[^/]+\.(pem|key|p12|jks))$")
+SECRET_LINE = re.compile(
+    r"""(?ix)
+    (password|passwd|secret|api[_-]?key|signing[_-]?key|hmac[_-]?key|access[_-]?key|private[_-]?key)
+    ["']?\s*[:=]\s*["']?(?!\$\{)(?!<)[A-Za-z0-9/+_\-.!@#%^&*]{8,}
+    """
+)
+URL_WITH_PASSWORD = re.compile(r"[a-z]+://[^\s:/@]+:[^\s@${}]{4,}@")
+
+errors = []
+for name in git("diff", "--cached", "--name-only", "--diff-filter=ACMR").splitlines():
+    if BLOCKED_FILE.search(name):
+        errors.append(f"비밀값 파일은 커밋할 수 없습니다: {name} (.env.example 만 허용)")
+
+current = None
+for line in git("diff", "--cached", "-U0", "--diff-filter=ACMR").splitlines():
+    if line.startswith("+++ b/"):
+        current = line[6:]
+        continue
+    if not line.startswith("+") or line.startswith("+++"):
+        continue
+    if current and (current.startswith(".githooks/") or current.endswith((".md", ".gitmessage"))):
+        continue
+    if "allow-secret" in line:
+        continue
+    if SECRET_LINE.search(line) or URL_WITH_PASSWORD.search(line):
+        errors.append(f"{current}: 비밀값으로 보이는 줄 -> {line[1:].strip()[:100]}")
+
+if errors:
+    print("\n[pre-commit] 비밀값 커밋이 차단되었습니다:", file=sys.stderr)
+    for e in errors:
+        print("  - " + e, file=sys.stderr)
+    print("  -> 환경변수(${...})로 빼거나, 정말 더미 값이면 줄 끝에 'allow-secret' 주석을 다세요.\n", file=sys.stderr)
+    sys.exit(1)
