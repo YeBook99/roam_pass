@@ -1,0 +1,47 @@
+# PR이 열리거나 새 커밋이 push되면:
+#   1) PR head 커밋의 'manual-ci' 상태를 pending으로 둔다 → CI를 수동 실행해 통과하기 전에는 머지 불가 (branch protection)
+#   2) PR이 처음 열릴 때 수동 실행 방법을 코멘트로 안내한다
+# 이 워크플로는 테스트를 돌리지 않는다 (요구사항: PR CI는 수동 실행만).
+name: PR Guide
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [develop, main]
+
+permissions:
+  statuses: write
+  pull-requests: write
+
+jobs:
+  guide:
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/workflows/ci.yml`;
+
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: pr.head.sha, state: 'pending', context: 'manual-ci',
+              description: 'Actions → CI → Run workflow 로 수동 실행 필요',
+              target_url: workflowUrl,
+            });
+
+            if (['opened', 'reopened'].includes(context.payload.action)) {
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number: pr.number,
+                body: [
+                  '### 🔧 CI는 수동으로 실행해야 합니다',
+                  '',
+                  `1. [Actions → CI](${workflowUrl}) 에서 **Run workflow** 클릭`,
+                  `2. **Use workflow from** 에서 \`${pr.head.ref}\` 선택`,
+                  `3. base_branch: \`${pr.base.ref}\`, e2e 실행 여부 선택 후 Run`,
+                  '',
+                  `CLI: \`gh workflow run ci.yml --ref ${pr.head.ref} -f base_branch=${pr.base.ref}\``,
+                  '',
+                  '새 커밋을 push하면 `manual-ci`가 다시 대기 상태가 되므로 재실행이 필요합니다.',
+                ].join('\n'),
+              });
+            }

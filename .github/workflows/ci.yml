@@ -1,0 +1,208 @@
+# CI — develop/main 대상 PR은 "수동 실행"으로만 검증한다.
+#   실행: GitHub → Actions → CI → Run workflow → Branch에 PR 브랜치 선택 → Run
+#         또는 gh workflow run ci.yml --ref <브랜치>
+#   결과는 커밋 상태 'manual-ci'로 남고, PR에 요약 코멘트가 달린다. (branch protection 필수 체크)
+# 러너: 저장소 변수 RUNNER_LABELS(JSON)로 전환. 없으면 GitHub 기본 러너(ubuntu-latest).
+#   예) RUNNER_LABELS = ["self-hosted","linux","roampass"]
+name: CI
+run-name: "CI · ${{ github.ref_name }} · ${{ github.event_name == 'workflow_dispatch' && '수동' || 'push' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "e2e 핵심 시나리오 실행"
+        type: boolean
+        default: true
+      base_branch:
+        description: "커밋 검사 기준 브랜치 (PR 대상)"
+        type: choice
+        options: [develop, main]
+        default: develop
+  push:
+    branches: [develop, main]          # 머지 후 통합 브랜치 상태 확인
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: write
+
+jobs:
+  harness:
+    name: 규칙 검사 (브랜치·커밋·시크릿)
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    outputs:
+      backend: ${{ steps.detect.outputs.backend }}
+      frontend: ${{ steps.detect.outputs.frontend }}
+      e2e: ${{ steps.detect.outputs.e2e }}
+    steps:
+      - name: manual-ci 상태를 '진행 중'으로 표시
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: context.sha, state: 'pending', context: 'manual-ci',
+              description: 'CI 수동 실행 중',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                 # 커밋 범위 검사를 위해 전체 이력
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 구성 요소 감지 (backend / frontend / e2e)
+        id: detect
+        run: bash scripts/ci/detect-parts.sh
+
+      - name: 브랜치 이름 검사
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/ci/check-branch-name.mjs "${{ github.ref_name }}"
+
+      - name: 커밋 메시지 템플릿 검사 (기준 브랜치..HEAD)
+        if: github.event_name == 'workflow_dispatch'
+        run: bash scripts/ci/lint-commits.sh "origin/${{ inputs.base_branch }}"
+
+      - name: 커밋 메시지 템플릿 검사 (push 범위)
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: bash scripts/ci/lint-commits.sh "${{ github.event.before }}"
+
+      - name: 시크릿 검사
+        run: node scripts/ci/secret-scan.mjs
+
+  backend:
+    name: 백엔드 테스트 (Testcontainers)
+    needs: harness
+    if: needs.harness.outputs.backend == 'true'
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - name: 테스트 (동시성 · 발급 실패 보상 · 만료 계산 포함)
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew test --no-daemon
+      - name: 테스트 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: backend/build/reports/tests/test
+          if-no-files-found: ignore
+
+  frontend:
+    name: 프론트 빌드 (서버/클라이언트 경계 검사)
+    needs: harness
+    if: needs.harness.outputs.frontend == 'true'
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm run build
+
+  e2e:
+    name: e2e 핵심 시나리오 (Playwright headless)
+    needs: [harness, backend, frontend]
+    if: >-
+      always()
+      && needs.harness.result == 'success'
+      && needs.harness.outputs.e2e == 'true'
+      && !contains(needs.*.result, 'failure')
+      && (github.event_name != 'workflow_dispatch' || inputs.run_e2e)
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    env:
+      E2E_BASE_URL: http://localhost:3000
+      E2E_API_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: "전체 스택 기동 (e2e 프로필 — 짧은 타임아웃·모의 시스템 활성)"
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
+      - name: Playwright 설치
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: e2e 실행
+        working-directory: e2e
+        run: npx playwright test
+      - name: 실패 시 컨테이너 로그 저장
+        if: failure()
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml logs --no-color > e2e/compose.log
+      - name: 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+            e2e/compose.log
+          if-no-files-found: ignore
+      - name: 정리
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
+
+  report:
+    name: manual-ci 결과 보고
+    needs: [harness, backend, frontend, e2e]
+    if: always() && github.event_name == 'workflow_dispatch'
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    steps:
+      - name: 커밋 상태 + PR 코멘트
+        uses: actions/github-script@v7
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        with:
+          script: |
+            const needs = JSON.parse(process.env.RESULTS);
+            const failed = Object.values(needs).some(n => ['failure', 'cancelled'].includes(n.result));
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const icon = { success: '✅', failure: '❌', skipped: '⏭️', cancelled: '🚫' };
+
+            await github.rest.repos.createCommitStatus({
+              ...context.repo, sha: context.sha, context: 'manual-ci',
+              state: failed ? 'failure' : 'success',
+              description: failed ? 'CI 수동 실행 실패' : 'CI 수동 실행 통과',
+              target_url: runUrl,
+            });
+
+            const branch = context.ref.replace('refs/heads/', '');
+            const { data: prs } = await github.rest.pulls.list({
+              ...context.repo, state: 'open', head: `${context.repo.owner}:${branch}`,
+            });
+            const rows = Object.entries(needs)
+              .map(([job, n]) => `| ${job} | ${icon[n.result] ?? ''} ${n.result} |`).join('\n');
+            const body = [
+              `### ${failed ? '❌' : '✅'} CI 수동 실행 결과 — \`${context.sha.slice(0, 7)}\``,
+              '', '| job | 결과 |', '|---|---|', rows, '',
+              `[실행 로그 / 리포트 아티팩트](${runUrl})`,
+            ].join('\n');
+            for (const pr of prs) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: pr.number, body });
+            }
