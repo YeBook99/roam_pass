@@ -12,16 +12,17 @@
 
 ## 2. 기술 스택 (근거: `docs/02_기술선택_ADR.md`)
 
-- Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway
+- Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway. 구조는 레이어드 설계 기준(`.claude/skills/layered-architecture/ARCHITECTURE.md`, ADR-15)
 - Frontend: Next.js 15 App Router, TypeScript, TanStack Query
 - DB: PostgreSQL 16 (로컬 docker compose, 배포 AWS RDS) / 배포: AWS EC2
-- 모의 PG·공급사: 같은 앱의 `mock.pg`, `mock.supplier` 패키지. 호출은 반드시 **실제 HTTP**(RestClient)
-- 테스트: JUnit5 + Testcontainers + Awaitility
+- 외부 연동(PG·공급사 호출): `infra.{시스템}`의 Client 인터페이스 뒤에 둔다
+- 모의 PG·공급사: 같은 앱의 `mockpg`, `mocksupplier` 기능 패키지. 호출은 반드시 **실제 HTTP**(RestClient)
+- 테스트: JUnit5 + Testcontainers + ArchUnit(구조 규칙). 과제 필수 테스트와 `ArchitectureTest`만 둔다
 
 ## 3. 아키텍처 불변 규칙
 
 1. **외부 호출(PG·공급사 HTTP)은 DB 트랜잭션 밖에서 한다.** tx1 상태 선점 커밋 → HTTP → tx2 결과 저장 (`docs/06`)
-2. **모든 상태 변경은 `StatusTransitionService`를 거친다.** 조건부 UPDATE(`WHERE id=? AND status=?`)로 선점하고, 영향 행이 1일 때만 `status_history`를 남긴다. 엔티티 setter로 상태를 바꾸지 않는다
+2. **모든 상태 변경은 그 기능 Service의 전이 메서드로만 한다.** 허용 전이(`canTransitTo`)를 검사하고, 자기 Repository의 조건부 UPDATE(`WHERE id=? AND status=?`)로 선점하고, 영향 행이 1일 때만 같은 트랜잭션에서 `StatusHistoryService`로 이력을 남긴다. 다른 기능의 상태는 그 기능 Service를 불러 바꾼다. 엔티티 setter로 상태를 바꾸지 않는다
 3. **중복 방지는 DB가 보장한다.** UNIQUE + `ON CONFLICT DO NOTHING` + 조건부 UPDATE. `synchronized`나 메모리 락에 의존하지 않는다 (`docs/05`)
 4. **공급사 콜백은 HMAC-SHA256 서명 검증 후에만 처리한다.** 실패한 콜백도 `callback_log`에 남긴다
 5. **발급은 서버가 끝까지 책임진다.** 클라이언트 호출에 의존하지 않고 AFTER_COMMIT 이벤트 + 스케줄러 안전망으로 진행한다
@@ -42,6 +43,7 @@
 구현은 **메인 에이전트 하나**가 한다(사용자가 모든 코드를 설명해야 하므로 도메인별로 나누지 않는다).
 
 1. **작업 전에 브랜치부터 만든다.** develop에서 `<type>/<scope>-<설명>` 브랜치를 만든다 → `/branch-pr`
+   - 백엔드 뼈대를 만들거나 기능을 시작할 때는 코드를 쓰기 전에 `.claude/skills/layered-architecture/ARCHITECTURE.md` 기준으로 설계안을 먼저 정한다 → `/layered-architecture`
 2. **UI(`frontend/**`)를 고칠 때는 수정을 시작하기 전에** before 화면을 캡처한다 → `/ui-screenshot`
 3. 상태나 전이를 바꾸면 `/state-transition` 체크리스트를 따른다. 기술 결정이 생기면 `/adr`로 남긴다
 4. 커밋은 기능 단위로 나눈다 → `/commit`
@@ -58,8 +60,10 @@
 구현하면서 **실제로 실행해 확인한 명령만** 여기에 추가한다.
 
 ```bash
-cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend)
+cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend, 모의 PG 켜짐)
 curl localhost:8080/actuator/health                          # {"status":"UP"}
-docker compose down -v                                       # 정리 (DB 볼륨까지 삭제)
-cd backend && JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew test   # 테스트 (도커 실행 중이어야 함)
+docker compose down -v                                       # 정리 (DB 볼륨까지 삭제). 마이그레이션을 고쳤으면 다시 띄우기 전에 필요
+cd backend && JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew test   # 필수 테스트 + ArchitectureTest (도커 실행 중이어야 함)
+curl -X PUT -H 'Content-Type: application/json' localhost:8080/mock/pg/config -d '{"webhookCount":3}'   # 모의 PG 시연 설정
+curl -X POST localhost:8080/mock/reset                       # 모의 PG 설정 초기화
 ```

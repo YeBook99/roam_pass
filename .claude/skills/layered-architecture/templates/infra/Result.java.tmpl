@@ -1,0 +1,5 @@
+package {{base}}.infra.{{system}};
+
+// Client가 Service에 돌려주는 우리 쪽 결과. 외부 응답 형식이 바뀌어도 이 타입은 그대로 둔다
+public record {{System}}Result(String externalId) {
+}

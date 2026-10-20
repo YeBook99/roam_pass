@@ -12,8 +12,8 @@ description: 주문/결제/프로필 상태를 추가·변경하거나 새 전�
 - [ ] **enum**: `OrderStatus` / `PaymentStatus` / `InstallStatus`에 값을 추가하고 `canTransitTo()` 허용 목록을 갱신한다
 - [ ] **누가 이 상태를 끝내는가**: 이 상태에 들어온 주문을 다음 상태로 옮기는 주체(사용자 / 콜백 / 스케줄러 / 운영자)가 **최소 하나** 있는가? 없다면 주문이 영원히 멈춘다
 - [ ] **멈춤 감지**: 이 상태에 오래 머무르면 어드민 이상 건에 잡히는가? (기준 시간)
-- [ ] **전이 코드**: `StatusTransitionService`의 조건부 UPDATE(`WHERE status = :from`)를 통해서만 바꾼다. 영향 행이 0이면 "이미 다른 곳에서 처리됨"으로 보고 조용히 종료한다
-- [ ] **이력**: `status_history`에 from/to/actor/reason을 남긴다. actor는 USER / SYSTEM / SUPPLIER / PG / ADMIN:{id} 중 하나다
+- [ ] **전이 코드**: 그 기능 Service의 전이 메서드(예: `OrderService.markPaid`, `PaymentConfirmService`의 `transit`)에서 자기 Repository의 조건부 UPDATE(`WHERE status = :from`)로만 바꾼다. 다른 기능의 상태는 그 기능 Service를 부른다. 영향 행이 0이면 "이미 다른 곳에서 처리됨"으로 보고 조용히 종료한다
+- [ ] **이력**: 조건부 UPDATE가 1행일 때만 같은 트랜잭션에서 `StatusHistoryService.record`로 from/to/actor/reason을 남긴다. actor는 USER / SYSTEM / SUPPLIER / PG / ADMIN:{id} 중 하나다
 - [ ] **외부 호출**: 전이 전후로 PG·공급사 호출이 있다면 트랜잭션 밖에서 하는가 (tx1 → HTTP → tx2)
 - [ ] **환불 가능 여부**: 이 상태에서 환불을 허용하는가? `RefundPolicy`에 반영했는가
 - [ ] **테스트**: 정상 전이 1개, 허용되지 않은 전이 거부 1개, 동시 전이 시 1번만 성공하는지 확인하는 테스트(필요 시)

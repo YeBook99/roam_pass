@@ -1,0 +1,74 @@
+package {{base}}.{{feature}}.controller;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import {{base}}.global.error.BusinessException;
+import {{base}}.{{feature}}.dto.{{Feature}}CreateCommand;
+import {{base}}.{{feature}}.dto.{{Feature}}Response;
+import {{base}}.{{feature}}.exception.{{Feature}}ErrorCode;
+import {{base}}.{{feature}}.service.{{Feature}}Service;
+import java.time.Instant;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+// HTTP 계약(상태 코드, 응답 필드, 에러 형식)만 검증한다. Service는 가짜로 바꾼다 (ARCHITECTURE.md §16)
+// Spring Boot 3.4 이상이면 @MockBean 대신 @MockitoBean을 쓴다
+@WebMvcTest({{Feature}}Controller.class)
+class {{Feature}}ControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private {{Feature}}Service {{feature}}Service;
+
+    @Test
+    @DisplayName("등록하면 201과 Location 헤더, 생성된 id를 돌려준다")
+    void create() throws Exception {
+        given({{feature}}Service.create(new {{Feature}}CreateCommand("C-001", "이름")))
+                .willReturn(new {{Feature}}Response(1L, "C-001", "이름", Instant.parse("2026-01-01T00:00:00Z")));
+
+        mockMvc.perform(post("/api/{{features}}")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"code": "C-001", "name": "이름"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/{{features}}/1"))
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    @DisplayName("필수값이 비어 있으면 400과 INVALID_REQUEST, 틀린 필드 목록을 돌려주고 Service를 부르지 않는다")
+    void create_invalid() throws Exception {
+        mockMvc.perform(post("/api/{{features}}")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.errors.length()").value(2));
+
+        verifyNoInteractions({{feature}}Service);
+    }
+
+    @Test
+    @DisplayName("없는 id를 조회하면 404와 {{FEATURE}}_NOT_FOUND를 돌려준다")
+    void get_notFound() throws Exception {
+        given({{feature}}Service.get(9L)).willThrow(new BusinessException({{Feature}}ErrorCode.{{FEATURE}}_NOT_FOUND));
+
+        mockMvc.perform(get("/api/{{features}}/9"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("{{FEATURE}}_NOT_FOUND"));
+    }
+}

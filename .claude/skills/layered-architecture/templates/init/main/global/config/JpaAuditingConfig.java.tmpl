@@ -1,0 +1,20 @@
+package {{base}}.global.config;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
+// @EnableJpaAuditing을 메인 클래스가 아닌 별도 설정에 두는 이유: @WebMvcTest가 JPA 없이 뜰 수 있게
+@Configuration
+@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
+public class JpaAuditingConfig {
+
+    @Bean
+    public DateTimeProvider auditingDateTimeProvider(Clock clock) {
+        return () -> Optional.of(Instant.now(clock));
+    }
+}

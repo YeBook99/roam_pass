@@ -1,0 +1,45 @@
+package {{base}}.{{feature}}.service;
+
+import {{base}}.global.error.BusinessException;
+import {{base}}.{{feature}}.domain.{{Entity}};
+import {{base}}.{{feature}}.dto.{{Feature}}CreateCommand;
+import {{base}}.{{feature}}.dto.{{Feature}}Response;
+import {{base}}.{{feature}}.exception.{{Feature}}ErrorCode;
+import {{base}}.{{feature}}.repository.{{Entity}}Repository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+// 외부 호출이 없는 use case: public 메서드 = 트랜잭션 하나 (ARCHITECTURE.md §6)
+// 외부 호출이 있으면 ExternalCallService.java.tmpl 모양을 쓴다 (§7)
+@Service
+@RequiredArgsConstructor
+public class {{Feature}}Service {
+
+    private final {{Entity}}Repository {{entity}}Repository;
+
+    @Transactional
+    public {{Feature}}Response create({{Feature}}CreateCommand command) {
+        // 사전 검사는 친절한 메시지용. 동시 요청은 DB UNIQUE가 막는다 (§11)
+        if ({{entity}}Repository.existsByCode(command.code())) {
+            throw new BusinessException({{Feature}}ErrorCode.DUPLICATE_CODE);
+        }
+        try {
+            {{Entity}} saved = {{entity}}Repository.saveAndFlush({{Entity}}.create(command.code(), command.name()));
+            return {{Feature}}Response.from(saved);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException({{Feature}}ErrorCode.DUPLICATE_CODE);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public {{Feature}}Response get(Long id) {
+        return {{Feature}}Response.from(get{{Entity}}(id));
+    }
+
+    private {{Entity}} get{{Entity}}(Long id) {
+        return {{entity}}Repository.findById(id)
+                .orElseThrow(() -> new BusinessException({{Feature}}ErrorCode.{{FEATURE}}_NOT_FOUND));
+    }
+}

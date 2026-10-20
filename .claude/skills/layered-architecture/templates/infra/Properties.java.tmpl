@@ -1,0 +1,9 @@
+package {{base}}.infra.{{system}};
+
+import java.time.Duration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+// application.yml의 external.{{system}}.* 값. 시크릿이 있으면 ${ENV} 자리표시자로만 받는다 (ARCHITECTURE.md §14)
+@ConfigurationProperties("external.{{system}}")
+public record {{System}}Properties(String baseUrl, Duration connectTimeout, Duration readTimeout) {
+}

@@ -1,0 +1,7 @@
+package {{base}}.infra.{{system}};
+
+// Service가 의존하는 것은 이 인터페이스다. 외부 업체가 바뀌어도 Service는 그대로다 (ARCHITECTURE.md §13-2)
+public interface {{System}}Client {
+
+    {{System}}Result send(Long requestId);
+}

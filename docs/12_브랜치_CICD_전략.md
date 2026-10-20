@@ -139,7 +139,7 @@ CLAUDE.md에서 옮겨 왔다. 이 목록은 자동으로 동작하거나 Claude
 |---|---|---|
 | git hook | `.githooks/` | `pre-commit`(보호 브랜치 커밋 차단, 브랜치 이름 검사), `commit-msg`(템플릿 형식 검사) |
 | Claude hook | `.claude/settings.json` | `guard-secrets`(시크릿 쓰기 차단), `guard-bash`(force push·squash·`--no-verify`·보호 브랜치 push 차단), `sync-reminder`(문서 동기화 알림) |
-| 스킬 | `.claude/skills/` | `branch-pr`, `commit`, `ui-screenshot`, `adr`, `interview-answer`, `mock-interview`, `state-transition`, `verify` |
+| 스킬 | `.claude/skills/` | `branch-pr`, `commit`, `ui-screenshot`, `adr`, `interview-answer`, `mock-interview`, `state-transition`, `verify`, `layered-architecture`(백엔드 구조 기준), `lombok-support` |
 | 서브에이전트 | `.claude/agents/` | `invariant-reviewer` — PR 전 diff를 읽기 전용으로 검토 |
 | MCP | `.mcp.json` | `playwright` — `@playwright/mcp` headless, 화면 캡처용 |
 

@@ -1,0 +1,48 @@
+package {{base}}.{{feature}}.service;
+
+import {{base}}.global.error.BusinessException;
+import {{base}}.infra.{{system}}.{{System}}Client;
+import {{base}}.infra.{{system}}.{{System}}Result;
+import {{base}}.{{feature}}.domain.{{Entity}};
+import {{base}}.{{feature}}.dto.{{Feature}}Response;
+import {{base}}.{{feature}}.exception.{{Feature}}ErrorCode;
+import {{base}}.{{feature}}.repository.{{Entity}}Repository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+
+// 외부 호출이 있는 use case: tx1 → 외부 호출(트랜잭션 밖) → tx2 (ARCHITECTURE.md §7)
+// 이 메서드에는 @Transactional을 붙이지 않는다. DB 작업만 transactionTemplate.execute()로 감싼다
+// 기존 {{Feature}}Service에 메서드로 추가해도 되고, 메서드가 많아지면 {{Feature}}{Action}Service로 나눈다
+@Service
+@RequiredArgsConstructor
+public class {{Feature}}{{Action}}Service {
+
+    private final {{Entity}}Repository {{entity}}Repository;
+    private final {{System}}Client {{system}}Client;
+    private final TransactionTemplate transactionTemplate;
+
+    public {{Feature}}Response {{action}}(Long id) {
+        // tx1: 보내기 전에 "요청함"을 기록하고 커밋한다
+        {{Entity}} requested = transactionTemplate.execute(status -> {
+            {{Entity}} entity = get{{Entity}}(id);
+            entity.mark{{Action}}Requested();
+            return entity;
+        });
+
+        // 외부 호출: 트랜잭션 밖. 실패하면 tx1 기록이 남고, 마무리 주체(재조회·스케줄러·운영자)를 설계안에 적는다
+        {{System}}Result result = {{system}}Client.send(requested.getId());
+
+        // tx2: 결과 저장. tx1의 객체는 detached 상태이므로 다시 조회한다 (§7-4)
+        return transactionTemplate.execute(status -> {
+            {{Entity}} entity = get{{Entity}}(id);
+            entity.complete{{Action}}(result.externalId());
+            return {{Feature}}Response.from(entity);
+        });
+    }
+
+    private {{Entity}} get{{Entity}}(Long id) {
+        return {{entity}}Repository.findById(id)
+                .orElseThrow(() -> new BusinessException({{Feature}}ErrorCode.{{FEATURE}}_NOT_FOUND));
+    }
+}
