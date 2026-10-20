@@ -16,7 +16,7 @@
 # ────────────────────────────────────────────────────
 #
 # type : feat | fix | test | refactor | docs | chore | build
-# scope: plan | order | payment | issue | install | admin | mock | front | infra | harness | arch | learn | ci | e2e
+# scope: plan | order | payment | issue | install | admin | mock | front | infra | harness | arch | learn | ci
 #
 # 규칙
 # - 한 커밋 = 한 기능(또는 한 문제). 여러 기능을 섞지 않는다

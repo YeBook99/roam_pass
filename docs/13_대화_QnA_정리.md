@@ -19,8 +19,7 @@
 | 7 | 브랜치 | `main` ← `develop` ← `<type>/<scope>-<설명>`. 기능마다 브랜치, develop으로 PR | `docs/12`, `/branch-pr` |
 | 8 | CI/CD | **GitHub Actions**. PR CI는 **수동 실행만**, 러너는 기본 러너 + 변수로 self-hosted 전환 | `docs/12` |
 | 9 | UI PR | Playwright MCP(headless)로 before/after 캡처 필수 | `/ui-screenshot` |
-| 10 | e2e | 핵심 시나리오 E1~E6만 | `/e2e`, `docs/11` §6 |
-| 11 | 에이전트 | 구현은 메인 에이전트 하나. 서브에이전트는 **읽기 전용 리뷰어 1개**만. 모의 면접은 스킬로 | CLAUDE.md §5, `docs/12` §7 |
+| 10 | 에이전트 | 구현은 메인 에이전트 하나. 서브에이전트는 **읽기 전용 리뷰어 1개**만. 모의 면접은 스킬로 | CLAUDE.md §5, `docs/12` §7 |
 
 ---
 
@@ -110,7 +109,6 @@
 - 브랜치: `.githooks/pre-commit`이 main/develop 직접 커밋과 잘못된 브랜치 이름을 막는다. Claude hook은 보호 브랜치 push를 막는다 → `/branch-pr` 스킬
 - CI/CD: `ci.yml`(수동 실행), `pr-guide.yml`(PR마다 `manual-ci` 대기 상태 + 안내), `cd.yml`(main → GHCR → 승인 후 EC2). actionlint로 검증했다
 - UI 캡처: `.mcp.json`(Playwright MCP headless) + `/ui-screenshot` 스킬
-- e2e: `e2e/`에 6개 시나리오, 9개 테스트를 썼다. **앱이 아직 없어서 실행은 구현 후에 한다.** 대신 화면 testid·API·설정을 `/e2e` 스킬 §4의 "구현 계약"으로 고정했다
 
 ---
 
@@ -154,10 +152,9 @@
 | **Claude hook** (`.claude/settings.json`) | Claude Code가 도구 실행 직전·직후에 **자동** 실행 | ✅ (차단형은 우회 불가) |
 | **git hook** (`.githooks/`) | git이 커밋할 때 **누가 커밋하든** 실행 | ✅ |
 | **CI** (GitHub Actions) | GitHub 서버 | ✅ (branch protection과 연결 시) |
-| **e2e 테스트** (`e2e/tests`) | 일반 테스트 코드. 사용자 터미널, CI, 또는 에이전트가 Bash로 실행 | 실행했을 때만 |
-| **Playwright MCP** | 에이전트가 브라우저를 직접 조작하는 **도구**(캡처용). e2e와는 별개 | — |
+| **Playwright MCP** | 에이전트가 브라우저를 직접 조작하는 **도구**(캡처용) | — |
 
-**남은 약점**: UI 캡처(특히 **수정 전** before)와 e2e 실행은 에이전트 판단에 의존한다. 강제하려면 다음 방법이 있다(아직 적용 안 함).
+**남은 약점**: UI 캡처(특히 **수정 전** before)는 에이전트 판단에 의존한다. 강제하려면 다음 방법이 있다(아직 적용 안 함).
 - `frontend/**`를 처음 수정할 때 before 캡처가 없으면 막는 PreToolUse hook
 - `frontend/**`가 바뀌었는데 PR 본문의 화면 표가 비면 실패하는 CI 검사
 
@@ -177,7 +174,6 @@
 |---|---|---|
 | 도메인별 구현 에이전트 | ❌ | 이해가 조각나 **내가 코드를 설명하기 어려워짐**. 이 과제의 가장 큰 위험 |
 | **불변 규칙 리뷰어** | ✅ 도입 | PR 전 diff를 읽기 전용·독립된 눈으로 정합성 규칙 위반 검사 |
-| e2e 실행·분석 | ⏸ 보류 | 앱이 생긴 뒤 판단 |
 | 모의 면접관 | 스킬로 | 대화형이라 서브에이전트로는 불가 → `/mock-interview` |
 
 **결과**
@@ -194,7 +190,7 @@
   - A6: `while(true)` 무한 재시도
   - A7: `LocalDateTime.now()`
 - "의심" 2건도 보고했다. 하나는 환불 전 공급사 조회 누락이고, 다른 하나는 샘플 파일이 커밋될 위험이다
-- **실제 누락 1건**도 찾았다: e2e·Playwright MCP를 추가했는데 ADR이 없었다 → `ADR-14`를 추가했다
+- **실제 누락 1건**도 찾았다: Playwright MCP를 추가했는데 ADR이 없었다 → `ADR-14`를 추가했다
 - 작성자 맥락 없이 보는 리뷰어가 메인 에이전트가 놓친 것을 잡은 사례다. 서브에이전트 도입 근거("독립된 시각")가 실제로 확인됐다
 
 ---

@@ -29,12 +29,7 @@ curl -s localhost:8080/actuator/health
 ```
 - 요금제 조회 → 주문 → 결제 → 발급 콜백 → ISSUED 까지 README의 시연 순서대로 확인한다
 
-## 3-1. e2e 핵심 시나리오 (핵심 흐름·화면을 바꿨을 때)
-```bash
-docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
-cd e2e && npx playwright test
-```
-- 상세와 계약은 `/e2e` 스킬을 본다. UI를 바꿨다면 `/ui-screenshot` after 캡처도 한다
+- UI를 바꿨다면 `/ui-screenshot` after 캡처도 한다
 
 ## 4. 시크릿 점검 (부록 B)
 ```bash

@@ -31,7 +31,7 @@ Co-Authored-By: ... (시스템이 요구하면)
 ```
 
 - type: feat|fix|test|refactor|docs|chore|build
-- scope: plan|order|payment|issue|install|admin|mock|front|infra|harness|arch|learn|ci|e2e
+- scope: plan|order|payment|issue|install|admin|mock|front|infra|harness|arch|learn|ci
 
 5. commit-msg 훅이 거부하면 메시지를 고쳐 **다시 커밋**한다. `--no-verify`, `--amend`, squash는 쓰지 않는다
 6. 마지막에 `git log --oneline -n <개수>`로 결과를 보여 준다

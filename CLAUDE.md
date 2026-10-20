@@ -16,7 +16,7 @@
 - Frontend: Next.js 15 App Router, TypeScript, TanStack Query
 - DB: PostgreSQL 16 (로컬 docker compose, 배포 AWS RDS) / 배포: AWS EC2
 - 모의 PG·공급사: 같은 앱의 `mock.pg`, `mock.supplier` 패키지. 호출은 반드시 **실제 HTTP**(RestClient)
-- 테스트: JUnit5 + Testcontainers + Awaitility, e2e는 Playwright
+- 테스트: JUnit5 + Testcontainers + Awaitility
 
 ## 3. 아키텍처 불변 규칙
 
@@ -45,9 +45,8 @@
 2. **UI(`frontend/**`)를 고칠 때는 수정을 시작하기 전에** before 화면을 캡처한다 → `/ui-screenshot`
 3. 상태나 전이를 바꾸면 `/state-transition` 체크리스트를 따른다. 기술 결정이 생기면 `/adr`로 남긴다
 4. 커밋은 기능 단위로 나눈다 → `/commit`
-5. 결제·발급·환불·설치추적·어드민 흐름이나 그 화면을 바꿨으면 관련 e2e를 실행한다 → `/e2e`. testid·API·설정 계약을 바꾸면 e2e 코드도 같은 PR에서 고친다
-6. PR 전에 `invariant-reviewer` 서브에이전트로 diff를 검토한다
-7. PR은 develop 대상으로 올리고 **Merge commit**으로만 합친다(squash 금지). PR CI는 자동으로 돌지 않으므로 사용자에게 수동 실행(Actions → CI → Run workflow)을 안내한다
+5. PR 전에 `invariant-reviewer` 서브에이전트로 diff를 검토한다
+6. PR은 develop 대상으로 올리고 **Merge commit**으로만 합친다(squash 금지). PR CI는 자동으로 돌지 않으므로 사용자에게 수동 실행(Actions → CI → Run workflow)을 안내한다
 
 ## 6. CI 워크플로를 수정할 때 (`docs/12_브랜치_CICD_전략.md`)
 

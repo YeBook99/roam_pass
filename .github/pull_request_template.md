@@ -12,7 +12,7 @@
 ## 검증
 - [ ] **CI 수동 실행 완료** (Actions → CI → Run workflow → 이 브랜치 선택) — 결과 링크:
 - [ ] 백엔드 테스트 (동시성 / 발급 실패 보상 / 만료 계산 관련 시 필수)
-- [ ] e2e 핵심 시나리오 (해당 시)
+- [ ] `docker compose up -d --build --wait` 기동 확인 (README 실행 방법이 깨지지 않았는지)
 
 ## 화면 변경 (UI를 수정한 경우 필수)
 <!-- /ui-screenshot 스킬이 만든 .mr-assets/<브랜치>/SCREENSHOTS.md 표를 붙이고 이미지를 드래그해서 첨부 -->
