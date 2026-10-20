@@ -13,6 +13,10 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC          # timestamptz를 UTC로 읽고 쓴다
+  task:
+    scheduling:
+      pool:
+        size: 4                   # 대사 스케줄러와 모의 PG 웹훅 예약 전송이 함께 쓴다
 
 management:
   endpoints:
@@ -21,5 +25,17 @@ management:
         include: health
 
 app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}   # 모의 PG가 웹훅을 보낼 우리 서버 주소
   order:
     payment-ttl: PT10M            # 결제 대기 만료 시간
+  pg:
+    base-url: ${app.public-base-url}/mock/pg
+    webhook-secret: ${PG_WEBHOOK_SECRET}
+  payment:
+    reconcile-after: PT1M         # READY로 이만큼 지난 결제를 PG에 조회해 확정한다
+    reconcile-delay-ms: 60000     # 대사 스케줄러 주기
+
+mock:
+  enabled: ${MOCK_ENABLED:false}  # 모의 PG API. 시연 환경(compose)에서만 켠다
+  pg:
+    webhook-secret: ${PG_WEBHOOK_SECRET}   # 원래는 PG가 발급하는 키. 모의 PG와 우리가 같은 값을 쓴다
