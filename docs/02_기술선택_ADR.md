@@ -19,7 +19,7 @@
 | 08 | 아키텍처 스타일 | ~~도메인별 패키지 + 3계층~~ → ADR-15로 대체 | |
 | 09 | 모의 PG·공급사 위치 | **같은 앱, 별도 패키지, 실제 HTTP 호출** | 배포 1개 + 네트워크 문제 재현 |
 | 10 | HTTP 클라이언트 | **Spring RestClient** | 동기 코드, 타임아웃 설정 간단 |
-| 11 | 테스트 | **JUnit5 + Testcontainers + Awaitility** | H2로는 동시성·`ON CONFLICT` 재현 불가 |
+| 11 | 테스트 | **JUnit5 + Testcontainers** (Awaitility는 발급 단계에서) | H2로는 동시성·`ON CONFLICT` 재현 불가 |
 | 12 | 배포 | **AWS 프리티어 EC2 + RDS** | 서버가 잠들지 않아 스케줄러 유지 |
 | 13 | 서명 | **HMAC-SHA256 (JDK `javax.crypto`)** | 과제 명세, 외부 라이브러리 불필요 |
 | 14 | PR 화면 캡처 | **Playwright MCP** | 같은 조건으로 before/after 캡처. 필수 테스트는 백엔드에서 증명 |
@@ -153,7 +153,7 @@
 - **대안**: `RestTemplate`(유지보수 모드), `WebClient`(리액티브라 동기 코드에서 `block()`이 필요해 혼란), OpenFeign(의존성과 설정 추가)
 - **근거**: "동기 코드로 읽기 쉽고 Boot 3.2부터 기본으로 권장되는 클라이언트라서 골랐습니다. **타임아웃을 반드시 설정**했습니다. 설정하지 않으면 외부 서버가 응답하지 않을 때 스레드가 무한정 묶이기 때문입니다."
 
-### ADR-11. JUnit5 + Testcontainers + Awaitility
+### ADR-11. JUnit5 + Testcontainers (+ Awaitility는 발급 단계에서)
 
 - **결정**: 테스트용 PostgreSQL을 Docker로 띄우는 **Testcontainers**, 비동기 결과를 기다리는 **Awaitility**(비동기 발급을 테스트할 때 추가한다. 결제 단계에서는 쓰는 곳이 없어 아직 넣지 않았다)
 - **대안**: H2 메모리 DB(빠르지만 `ON CONFLICT`·부분 인덱스·락 동작이 PostgreSQL과 달라 **동시성 테스트가 거짓으로 통과**할 수 있음), Mockito로 DB 모킹(중복 방지를 DB가 보장하는데 DB를 가짜로 바꾸면 검증할 게 없음)

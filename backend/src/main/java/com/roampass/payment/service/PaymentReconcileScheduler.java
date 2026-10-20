@@ -46,6 +46,9 @@ public class PaymentReconcileScheduler {
                 }
             } catch (BusinessException e) {
                 log.warn("대사 조회 실패, 다음 주기에 다시 시도 paymentId={} : {}", payment.getId(), e.getMessage());
+            } catch (RuntimeException e) {
+                // 예상하지 못한 예외(DB 제약 위반 등)도 이 건만 건너뛰고 다음 결제를 처리한다. 한 건 때문에 뒤 건이 밀리지 않게
+                log.error("대사 처리 중 예상하지 못한 오류 paymentId={}", payment.getId(), e);
             }
         }
     }
