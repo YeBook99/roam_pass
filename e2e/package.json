@@ -1,0 +1,17 @@
+{
+  "name": "roampass-e2e",
+  "private": true,
+  "description": "ROAMPASS 핵심 시나리오 e2e (Playwright, headless)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "list": "playwright test --list",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.6.0"
+  }
+}
