@@ -9,7 +9,8 @@ CREATE TABLE mock.pg_payment (
     amount              INT         NOT NULL,
     canceled_amount     INT         NOT NULL DEFAULT 0,
     status              VARCHAR(20) NOT NULL,           -- APPROVED | FAILED | PARTIAL_CANCELED | CANCELED
-    created_at          TIMESTAMPTZ NOT NULL
+    created_at          TIMESTAMPTZ NOT NULL,
+    updated_at          TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE mock.pg_cancel (
@@ -17,5 +18,6 @@ CREATE TABLE mock.pg_cancel (
     request_key VARCHAR(100) NOT NULL UNIQUE,           -- 같은 취소 요청은 한 번만 반영한다
     pg_tid      VARCHAR(64)  NOT NULL,
     amount      INT          NOT NULL,
-    created_at  TIMESTAMPTZ  NOT NULL
+    created_at  TIMESTAMPTZ  NOT NULL,
+    updated_at  TIMESTAMPTZ  NOT NULL
 );
