@@ -37,7 +37,7 @@ jobs:
                   '',
                   `1. [Actions → CI](${workflowUrl}) 에서 **Run workflow** 클릭`,
                   `2. **Use workflow from** 에서 \`${pr.head.ref}\` 선택`,
-                  `3. base_branch: \`${pr.base.ref}\`, e2e 실행 여부 선택 후 Run`,
+                  `3. base_branch: \`${pr.base.ref}\` 선택 후 Run`,
                   '',
                   `CLI: \`gh workflow run ci.yml --ref ${pr.head.ref} -f base_branch=${pr.base.ref}\``,
                   '',

@@ -6,7 +6,7 @@ const fs = require('fs');
 const TYPES = ['feat', 'fix', 'test', 'refactor', 'docs', 'chore', 'build'];
 const SCOPES = [
   'plan', 'order', 'payment', 'issue', 'install', 'admin',
-  'mock', 'front', 'infra', 'harness', 'arch', 'learn', 'ci', 'e2e',
+  'mock', 'front', 'infra', 'harness', 'arch', 'learn', 'ci',
 ];
 const SECTIONS = ['[왜]', '[무엇]', '[검증]', '[관련]'];
 

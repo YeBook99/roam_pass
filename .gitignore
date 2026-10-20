@@ -21,12 +21,6 @@ frontend/.next/
 frontend/out/
 frontend/next-env.d.ts
 
-# e2e (Playwright)
-e2e/node_modules/
-e2e/playwright-report/
-e2e/test-results/
-e2e/compose.log
-
 # PR 첨부용 화면 캡처 (Playwright MCP 출력) — PR 웹 화면에 드래그해서 첨부
 .mr-assets/
 

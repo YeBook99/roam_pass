@@ -1,6 +1,5 @@
 // 화면 캡처·시연용 고정 데이터: 사용자 demo-user 에게 이심 ISSUED 1건, 유심 PICKUP_READY 1건을 만든다.
 // 사용: node scripts/dev/seed-demo.mjs   (API_URL 기본 http://localhost:8080, 백엔드가 실행 중이어야 함)
-// API 계약은 .claude/skills/e2e/SKILL.md §4.2 와 같다.
 const API = process.env.API_URL ?? 'http://localhost:8080';
 const USER = { 'X-User-Id': 'demo-user', 'Content-Type': 'application/json' };
 

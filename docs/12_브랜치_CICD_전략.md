@@ -36,18 +36,17 @@ fix/...           ●───●
 | 워크플로 | 언제 | 하는 일 |
 |---|---|---|
 | `pr-guide.yml` | PR 열림·새 커밋 push (자동) | `manual-ci` 상태를 **pending**으로 표시하고 수동 실행 방법을 안내한다. 테스트는 돌리지 않는다 |
-| `ci.yml` | **사용자가 웹 UI에서 수동 실행** / develop·main push | 규칙 검사 → 백엔드 테스트 → 프론트 빌드 → e2e → `manual-ci` 상태와 PR 코멘트로 결과 보고 |
+| `ci.yml` | **사용자가 웹 UI에서 수동 실행** / develop·main push | 규칙 검사 → 백엔드 테스트 → 프론트 빌드 → `manual-ci` 상태와 PR 코멘트로 결과 보고 |
 | `cd.yml` | main push (릴리스 PR 머지) | 이미지 빌드 → GHCR push → (승인 후) EC2 배포 → 헬스 체크 |
 
 ### CI job 구성
 ```
 harness (브랜치 이름 · 커밋 템플릿 · 시크릿 검사 · 구성요소 감지)
    ├─▶ backend  (./gradlew test — Testcontainers로 진짜 PostgreSQL)
-   ├─▶ frontend (npm ci · lint · build — 서버/클라이언트 경계 오류 검출)
-   └─▶ e2e      (docker compose로 전체 기동 → Playwright headless 핵심 시나리오)
+   └─▶ frontend (npm ci · lint · build — 서버/클라이언트 경계 오류 검출)
 report (manual-ci 커밋 상태 + PR 코멘트)
 ```
-- **아직 코드가 없어도 실패하지 않는다.** `detect-parts.sh`가 `backend/build.gradle`, `frontend/package.json`, `e2e/package.json`이 있는지 보고, 없는 부분의 job은 건너뛴다. 코드가 추가되는 순간 자동으로 그 job이 켜진다
+- **아직 코드가 없어도 실패하지 않는다.** `detect-parts.sh`가 `backend/build.gradle`, `frontend/package.json`이 있는지 보고, 없는 부분의 job은 건너뛴다. 코드가 추가되는 순간 자동으로 그 job이 켜진다
 
 ### 처음 도입할 때 생긴 예외 두 가지
 - **PR #1은 CI를 돌리지 못하고 머지했다.** `workflow_dispatch` 워크플로는 기본 브랜치에 파일이 있어야 실행할 수 있는데, `ci.yml`을 처음 들여오는 PR이라 어디에도 파일이 없었다(실행 요청이 404). 그래서 로컬 검사(시크릿 스캔, 브랜치명, 셸 문법)만 확인하고 머지했다. 다음 PR부터는 정상적으로 수동 실행한다
@@ -77,7 +76,7 @@ report (manual-ci 커밋 상태 + PR 코멘트)
 ### self-hosted runner 붙이는 법 (나중에)
 1. Settings → Actions → Runners → **New self-hosted runner** → Linux x64
 2. 화면에 나온 명령을 서버에서 실행한다(`./config.sh --url ... --token ... --labels roampass`, `sudo ./svc.sh install && sudo ./svc.sh start`)
-3. 서버에 **Docker**(Testcontainers·e2e용)와 Playwright 브라우저 의존성(`npx playwright install-deps`, sudo 필요)을 준비한다
+3. 서버에 **Docker**(Testcontainers용)를 준비한다
 4. 저장소 변수 `RUNNER_LABELS`를 설정한다
 5. ⚠️ **public 저장소에는 self-hosted 러너를 붙이지 않는다.** 외부 PR이 내 서버에서 임의 코드를 실행할 수 있다
 6. 1GB 프리티어 EC2는 빌드와 테스트를 돌리기에 부족하다. 배포 서버와 러너는 분리하는 것을 권장한다
@@ -88,7 +87,7 @@ report (manual-ci 커밋 상태 + PR 코멘트)
 ```bash
 git remote add origin https://github.com/<계정>/<저장소>.git
 git push -u origin main develop                 # 보호 브랜치 최초 push는 사용자가 직접 (Claude hook이 차단함)
-git push -u origin chore/harness-branch-cicd-e2e
+git push -u origin <작업 브랜치>
 ```
 
 ### 4.2 Settings → General
@@ -129,7 +128,6 @@ git push -u origin chore/harness-branch-cicd-e2e
 2. Actions → **CI** → **Run workflow**
    - Use workflow from: **PR 브랜치**
    - base_branch: `develop` (릴리스 PR이면 `main`)
-   - run_e2e: 기본 체크
 3. 끝나면 PR에 결과 표 코멘트가 달리고 `manual-ci`가 ✅/❌로 바뀐다
 4. CLI: `gh workflow run ci.yml --ref <브랜치> -f base_branch=develop`
 
@@ -141,7 +139,7 @@ CLAUDE.md에서 옮겨 왔다. 이 목록은 자동으로 동작하거나 Claude
 |---|---|---|
 | git hook | `.githooks/` | `pre-commit`(보호 브랜치 커밋 차단, 브랜치 이름 검사), `commit-msg`(템플릿 형식 검사) |
 | Claude hook | `.claude/settings.json` | `guard-secrets`(시크릿 쓰기 차단), `guard-bash`(force push·squash·`--no-verify`·보호 브랜치 push 차단), `sync-reminder`(문서 동기화 알림) |
-| 스킬 | `.claude/skills/` | `branch-pr`, `commit`, `ui-screenshot`, `e2e`, `adr`, `interview-answer`, `mock-interview`, `state-transition`, `verify` |
+| 스킬 | `.claude/skills/` | `branch-pr`, `commit`, `ui-screenshot`, `adr`, `interview-answer`, `mock-interview`, `state-transition`, `verify` |
 | 서브에이전트 | `.claude/agents/` | `invariant-reviewer` — PR 전 diff를 읽기 전용으로 검토 |
 | MCP | `.mcp.json` | `playwright` — `@playwright/mcp` headless, 화면 캡처용 |
 
@@ -152,7 +150,7 @@ CLAUDE.md에서 옮겨 왔다. 이 목록은 자동으로 동작하거나 Claude
 | 이득 | 예 |
 |---|---|
 | **독립된 시각**: 작성 맥락 없이 검토 | `invariant-reviewer` |
-| **컨텍스트 분리**: 긴 로그·대량 탐색을 요약만 받음 | 후보: 앱 구현 후 e2e 실행·분석 |
+| **컨텍스트 분리**: 긴 로그·대량 탐색을 요약만 받음 | |
 | **권한 제한**: 읽기 전용 등으로 실수 범위 축소 | |
 | **병렬 처리**: 서로 독립된 작업을 동시에 | |
 
@@ -161,6 +159,5 @@ CLAUDE.md에서 옮겨 왔다. 이 목록은 자동으로 동작하거나 Claude
 ## 8. 한계와 다음 단계
 
 - PR 코멘트·상태 기록은 같은 저장소 브랜치의 PR만 지원한다(fork PR은 토큰 권한이 읽기 전용)
-- e2e는 매번 이미지를 새로 빌드해서 느리다 → 레이어 캐시(`cache-from: type=gha`) 적용 여지가 있다
 - CD 롤백은 수동이다(`IMAGE_TAG=<이전 sha>`로 다시 up)
 - 면접 연결: 가산점 "자동 배포"(2.8)의 근거 문서다

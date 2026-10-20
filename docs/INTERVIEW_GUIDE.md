@@ -70,7 +70,7 @@
 | 마이그레이션 | Flyway | ddl-auto: 실행된 DDL이 안 보임 |
 | 테스트 | Testcontainers | H2: 동시성 테스트가 거짓으로 통과할 수 있음 |
 | 배포 | EC2 + RDS | Render 무료: 15분 후 잠들어 스케줄러 정지 |
-| e2e·화면 캡처 | Playwright (+ MCP) | Cypress: 브라우저를 닫고 새로 여는 시나리오가 불편 / 수동 캡처: before·after 조건이 매번 다름 |
+| PR 화면 캡처 | Playwright MCP | 수동 캡처: before·after 조건이 매번 다름 |
 
 **문서·코드 위치**: `docs/02`, `backend/build.gradle`, `frontend/package.json`
 

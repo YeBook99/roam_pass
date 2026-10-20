@@ -1,6 +1,6 @@
 ---
 name: invariant-reviewer
-description: PR을 올리기 전에 작업 브랜치의 변경(diff)만 보고 CLAUDE.md §3 아키텍처 불변 규칙 위반, 상태 설계·설명 문서 동기화 누락, e2e testid 계약 위반을 찾는 읽기 전용 리뷰어. 백엔드/프론트 코드가 바뀐 브랜치에서 /branch-pr 3단계 점검 때 호출한다. 코드를 수정하지 않고 발견 사항만 보고한다.
+description: PR을 올리기 전에 작업 브랜치의 변경(diff)만 보고 CLAUDE.md §3 아키텍처 불변 규칙 위반, 상태 설계·설명 문서 동기화 누락을 찾는 읽기 전용 리뷰어. 백엔드/프론트 코드가 바뀐 브랜치에서 /branch-pr 3단계 점검 때 호출한다. 코드를 수정하지 않고 발견 사항만 보고한다.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -41,9 +41,6 @@ git status --short                   # 새로 만든 파일(untracked)은 Read�
 - 상태 enum이나 전이가 바뀌었는데 `docs/04_상태설계.md`가 diff에 없음
 - 중복 방지, 트랜잭션, 설치 판단, 프론트 경계 방식이 바뀌었는데 해당 `docs/05~08`과 `docs/INTERVIEW_GUIDE.md`가 diff에 없음
 - 새 라이브러리(build.gradle, package.json)가 추가됐는데 `docs/02_기술선택_ADR.md`가 diff에 없음
-
-### C. e2e 계약 (`frontend/**` 또는 모의 API가 바뀐 경우)
-- `.claude/skills/e2e/SKILL.md` §4의 `data-testid`, `data-status`, API 경로, 설정 이름이 제거되거나 바뀌었는데 `e2e/`가 diff에 없음
 
 ## 출력 형식 (이것만 출력)
 

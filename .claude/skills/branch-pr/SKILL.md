@@ -35,7 +35,6 @@ git switch -c feature/<scope>-<설명> develop
 ## 2. 작업 중
 - 커밋은 `/commit` 스킬로 기능 단위·템플릿 형식을 지킨다
 - UI(`frontend/**`)를 수정한다면 **수정 전에** `/ui-screenshot`의 before 캡처를 먼저 한다
-- 핵심 흐름을 바꿨다면 `/e2e`로 관련 시나리오를 실행한다
 
 ## 3. 마무리 → PR
 
