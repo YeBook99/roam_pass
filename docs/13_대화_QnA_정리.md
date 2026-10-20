@@ -11,7 +11,7 @@
 | # | 주제 | 결정 | 상세 문서 |
 |---|---|---|---|
 | 1 | 진행 방식 | 지금은 **구현하지 않고** 설계 문서·근거·학습 가이드·하네스만 만든다 | `docs/00`~`11` |
-| 2 | 백엔드 | Java 17 + Spring Boot 3.3 + **JPA (+ 네이티브 조건부 쿼리)**. MyBatis·JdbcTemplate 없이 | ADR-03, ADR-04 |
+| 2 | 백엔드 | Java 17 + Spring Boot 3.3(이후 3.5로 변경, ADR-03) + **JPA (+ 네이티브 조건부 쿼리)**. MyBatis·JdbcTemplate 없이 | ADR-03, ADR-04 |
 | 3 | 모의 PG·공급사 | 같은 Spring 앱 안 별도 패키지, 호출은 실제 HTTP | ADR-09 |
 | 4 | 배포 | **AWS 프리티어 (EC2 + RDS)**. 이번엔 문서만 | `docs/10`, `learn/L5` |
 | 5 | 문서 수준 | 1년차, **Next.js 처음** 기준. 처음 나오는 용어는 학습 가이드로 설명 | `docs/learn/` |
