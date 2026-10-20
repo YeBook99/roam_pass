@@ -63,7 +63,15 @@ public class PaymentService {
     public void saveReady() { ... }
 }
 ```
-**해결**: 트랜잭션이 필요한 메서드를 **별도 클래스**(`PaymentTxService`)로 분리하고 주입받아 호출한다. 이 과제에서 `PaymentFacade`(트랜잭션 없음, 순서 조율)와 `PaymentTxService`/`PaymentConfirmService`(트랜잭션 있음)를 나눈 이유다(`06` §2).
+**해결 방법 두 가지**
+1. 트랜잭션이 필요한 메서드를 **별도 클래스**로 분리하고 주입받아 호출한다. 다른 빈을 거치므로 프록시가 적용된다
+2. 프록시 없이 **`TransactionTemplate`**으로 트랜잭션 범위를 코드 블록으로 직접 감싼다
+   ```java
+   Payment ready = transactionTemplate.execute(status -> paymentRepository.save(...));   // 이 블록만 트랜잭션
+   pgClient.approve(...);                                                              // 트랜잭션 밖
+   ```
+
+이 과제는 처음에 1번(`PaymentFacade` + `PaymentTxService`)으로 했다가 2번으로 바꿨다. Service 위에 클래스가 하나 더 생겨 기능마다 모양이 달라졌기 때문이다(ADR-15). 다만 승인 응답·웹훅·대사가 함께 쓰는 확정 로직은 다른 빈(`PaymentConfirmService`)의 `@Transactional` 메서드로 두었다(`06` §2).
 
 ### 2.4 알아 둘 것
 - **롤백 기본 규칙**: `RuntimeException`과 `Error`만 롤백한다. `Exception`(checked)은 기본적으로 **커밋된다** → 필요하면 `@Transactional(rollbackFor = Exception.class)`

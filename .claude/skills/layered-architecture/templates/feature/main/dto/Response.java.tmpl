@@ -1,0 +1,12 @@
+package {{base}}.{{feature}}.dto;
+
+import {{base}}.{{feature}}.domain.{{Entity}};
+import java.time.Instant;
+
+// Entity → 응답 변환은 이 from() 한 곳에서 (ARCHITECTURE.md §8-3)
+public record {{Feature}}Response(Long id, String code, String name, Instant createdAt) {
+
+    public static {{Feature}}Response from({{Entity}} entity) {
+        return new {{Feature}}Response(entity.getId(), entity.getCode(), entity.getName(), entity.getCreatedAt());
+    }
+}

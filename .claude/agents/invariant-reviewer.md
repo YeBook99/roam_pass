@@ -27,7 +27,7 @@ git status --short                   # 새로 만든 파일(untracked)은 Read�
 | # | 규칙 | 찾는 방법 (예) |
 |---|---|---|
 | A1 | 외부 HTTP 호출(PG·공급사)은 트랜잭션 밖 | `@Transactional` 메서드나 클래스 안에서 `RestClient`, `restClient.`, `*Client.approve/cancel/request...` 호출. 같은 클래스 내부 호출로 트랜잭션이 걸리지 않는 함정도 확인한다 |
-| A2 | 상태 변경은 `StatusTransitionService`(조건부 UPDATE)만 | 엔티티 `setStatus(...)`, `status = ...` 후 save, `UPDATE ... SET status` 쿼리에 `AND status =` 조건이 없음 |
+| A2 | 상태 변경은 그 기능 Service의 전이 메서드(조건부 UPDATE + `StatusHistoryService`)만 | 엔티티 `setStatus(...)`, `status = ...` 후 save, `UPDATE ... SET status` 쿼리에 `AND status =` 조건이 없음, 다른 기능의 Repository로 상태를 바꿈, 영향 행 확인 없이 이력을 남김 |
 | A3 | 중복 방지는 DB(UNIQUE·ON CONFLICT·조건부 UPDATE) | `synchronized`, `ReentrantLock`, `ConcurrentHashMap`을 중복 체크용으로 사용, "조회 후 if 후 저장" 패턴 |
 | A4 | 콜백·웹훅은 HMAC 검증 후 처리 | 콜백 컨트롤러가 검증 전에 DTO로 바로 받음(`@RequestBody SomeDto`), `equals`로 서명 비교, 검증 실패를 기록하지 않음 |
 | A5 | 발급은 서버가 끝까지 책임 | 클라이언트 호출에 의존하는 발급 트리거, 스케줄러 안전망 누락 |
@@ -50,7 +50,7 @@ git status --short                   # 새로 만든 파일(untracked)은 Read�
 ### 위반 (반드시 수정)
 | 위치 | 규칙 | 근거 | 제안 |
 |---|---|---|---|
-| backend/.../PaymentService.java:42 | A1 | `@Transactional pay()` 안에서 `pgClient.approve()` 호출 | PaymentTxService로 tx를 분리하고 HTTP는 Facade에서 호출 (docs/06 §2) |
+| backend/.../PaymentService.java:42 | A1 | `@Transactional pay()` 안에서 `pgClient.approve()` 호출 | `@Transactional`을 빼고 DB 작업만 `TransactionTemplate`으로 감싸 tx1 → HTTP → tx2로 나눔 (docs/06 §2, ADR-15) |
 
 ### 의심 (확인 필요)
 | 위치 | 규칙 | 왜 의심인가 | 확인 방법 |

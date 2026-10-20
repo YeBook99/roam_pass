@@ -16,13 +16,14 @@
 | 05 | 비동기 | **AFTER_COMMIT 이벤트 + @Async + @Scheduled** | 브로커 없이 "즉시 처리 + DB 기반 안전망" |
 | 06 | DB | **PostgreSQL 16** | 회사 사용 DB, `ON CONFLICT`·`timestamptz`·부분 인덱스 |
 | 07 | 마이그레이션 | **Flyway** | 빈 DB에서 스키마+시드 재현이 제출 요건 |
-| 08 | 아키텍처 스타일 | **도메인별 패키지 + 3계층** | 설명 가능한 범위 유지 |
+| 08 | 아키텍처 스타일 | ~~도메인별 패키지 + 3계층~~ → ADR-15로 대체 | |
 | 09 | 모의 PG·공급사 위치 | **같은 앱, 별도 패키지, 실제 HTTP 호출** | 배포 1개 + 네트워크 문제 재현 |
 | 10 | HTTP 클라이언트 | **Spring RestClient** | 동기 코드, 타임아웃 설정 간단 |
-| 11 | 테스트 | **JUnit5 + Testcontainers + Awaitility** | H2로는 동시성·`ON CONFLICT` 재현 불가 |
+| 11 | 테스트 | **JUnit5 + Testcontainers** (Awaitility는 발급 단계에서) | H2로는 동시성·`ON CONFLICT` 재현 불가 |
 | 12 | 배포 | **AWS 프리티어 EC2 + RDS** | 서버가 잠들지 않아 스케줄러 유지 |
 | 13 | 서명 | **HMAC-SHA256 (JDK `javax.crypto`)** | 과제 명세, 외부 라이브러리 불필요 |
 | 14 | PR 화면 캡처 | **Playwright MCP** | 같은 조건으로 before/after 캡처. 필수 테스트는 백엔드에서 증명 |
+| 15 | 백엔드 구조 | **레이어드 아키텍처 (기능 우선 패키지 + 계층) + ArchUnit·Lombok·validation** | 모든 기능이 같은 모양, 규칙을 테스트로 강제 |
 
 ---
 
@@ -135,13 +136,14 @@
 
 ### ADR-08. 도메인별 패키지 + 3계층
 
+- **상태**: 대체됨(ADR-15). 결제 기능까지 이 방식으로 만들었다가 레이어드 설계 기준으로 다시 정리했다
 - **결정**: `order`, `payment`, `issue` 같은 도메인별 패키지 안에 Controller, Service, Repository를 둔다
 - **대안**: 헥사고날/클린 아키텍처(포트와 어댑터). 공급사 추상화 가산점에는 유리하지만 파일 수가 2~3배로 늘어난다
 - **근거**: "인터뷰에서 모든 클래스를 설명할 수 있는 수준으로 유지하고 싶었습니다. 다만 공급사 호출만은 `SupplierClient` 인터페이스로 분리해서, 나중에 공급사가 둘이 되면 구현체만 추가하도록 했습니다."
 
 ### ADR-09. 모의 PG·공급사: 같은 앱, 별도 패키지, 실제 HTTP
 
-- **결정**: `com.roampass.mock.pg`, `com.roampass.mock.supplier` 패키지에 컨트롤러를 둔다. 우리 서비스는 `RestClient`로 `APP_PUBLIC_BASE_URL/mock/...`을 **HTTP로** 호출하고, 모의 시스템도 웹훅과 콜백을 HTTP로 보낸다. 데이터는 `mock` 스키마에 둔다
+- **결정**: `com.roampass.mockpg`, `com.roampass.mocksupplier` 기능 패키지에 둔다(처음엔 `mock.pg`였지만 ADR-15의 구조 검사가 계층을 알아볼 수 있게 이름을 바꿨다). 우리 서비스는 `RestClient`로 `APP_PUBLIC_BASE_URL/mock/...`을 **HTTP로** 호출하고, 모의 시스템도 웹훅과 콜백을 HTTP로 보낸다. 데이터는 `mock` 스키마에 둔다
 - **대안**: 별도 Spring 앱(현실적이지만 배포 대상이 2개가 되고 프리티어 메모리 1GB에 JVM 2개는 빠듯함), 같은 앱에서 메서드 직접 호출(타임아웃이나 중복 콜백을 재현할 수 없음)
 - **근거**: "모의 시스템을 메서드로 직접 부르면 '응답이 안 오는 상황'을 만들 수 없어서 일부러 HTTP로 돌아 나가게 했습니다. 배포 환경에서도 콜백이 실제 네트워크를 타고 돌아와야 한다는 요건(2.6)도 이렇게 충족했습니다."
 
@@ -151,9 +153,9 @@
 - **대안**: `RestTemplate`(유지보수 모드), `WebClient`(리액티브라 동기 코드에서 `block()`이 필요해 혼란), OpenFeign(의존성과 설정 추가)
 - **근거**: "동기 코드로 읽기 쉽고 Boot 3.2부터 기본으로 권장되는 클라이언트라서 골랐습니다. **타임아웃을 반드시 설정**했습니다. 설정하지 않으면 외부 서버가 응답하지 않을 때 스레드가 무한정 묶이기 때문입니다."
 
-### ADR-11. JUnit5 + Testcontainers + Awaitility
+### ADR-11. JUnit5 + Testcontainers (+ Awaitility는 발급 단계에서)
 
-- **결정**: 테스트용 PostgreSQL을 Docker로 띄우는 **Testcontainers**, 비동기 결과를 기다리는 **Awaitility**
+- **결정**: 테스트용 PostgreSQL을 Docker로 띄우는 **Testcontainers**, 비동기 결과를 기다리는 **Awaitility**(비동기 발급을 테스트할 때 추가한다. 결제 단계에서는 쓰는 곳이 없어 아직 넣지 않았다)
 - **대안**: H2 메모리 DB(빠르지만 `ON CONFLICT`·부분 인덱스·락 동작이 PostgreSQL과 달라 **동시성 테스트가 거짓으로 통과**할 수 있음), Mockito로 DB 모킹(중복 방지를 DB가 보장하는데 DB를 가짜로 바꾸면 검증할 게 없음)
 - **근거**: "중복 방지를 DB 제약으로 했기 때문에 테스트도 진짜 PostgreSQL로 해야 의미가 있다고 생각했습니다." (→ [L4](learn/L4_동시성_테스트_도구.md))
 - **처음 써 봄?**: ✍️
@@ -181,3 +183,51 @@
   | 캡처를 테스트 코드로 | 완전 자동 | 바뀐 화면을 매번 테스트 코드로 쓰는 비용이 큼. 어떤 화면을 찍을지는 변경마다 달라서 에이전트가 판단하는 MCP 방식이 맞음 |
 - **처음 써 봄?**: ✍️
 - **한계**: 캡처는 사람이 눈으로 비교하는 용도다. 화면이 깨졌는지를 자동으로 판정하지는 않는다
+
+### ADR-15. 백엔드 구조: 레이어드 아키텍처 (기능 우선 패키지 + 계층)
+
+- **상태**: 채택 (ADR-08 대체)
+- **맥락**: 결제 기능까지 ADR-08(도메인별 패키지 안에 Controller·Service·Repository를 평평하게 둠)로 만들었다. 기능이 하나 둘일 때는 괜찮았는데, 점검해 보니 다음 문제가 있었다
+  - 같은 프로젝트 안에서도 기능마다 모양이 달랐다. 요금제는 Controller가 Repository를 바로 불렀고, 결제는 `PaymentFacade`·`PaymentTxService`라는 계층이 하나 더 있었다
+  - 다른 기능의 Repository를 그냥 가져다 썼다(주문 서비스 → 요금제 Repository, 결제 서비스 → 주문 Repository)
+  - `common` 패키지에 상태 전이·콜백 기록 같은 업무 코드가 쌓였고, `common.status`가 `order`·`payment`를 import하고 두 기능도 다시 `common.status`를 import하는 순환이 생겼다
+  - 이런 규칙이 문서에만 있고 어겨도 빌드가 그대로 통과했다
+- **결정**: `.claude/skills/layered-architecture/ARCHITECTURE.md`를 백엔드 설계 기준으로 삼는다. 핵심은 다음과 같다
+  - **기능 우선 + 계층**: `{기능}.{controller|service|repository|domain|dto|exception}`. 기술 공통 코드는 `global.{config|error|entity|web}`에만, 외부 연동은 `infra.{시스템}`에만 둔다
+  - **의존은 위에서 아래로만**: Controller → Service → Repository. 계층을 건너뛰지 않고, 다른 기능의 데이터는 그 기능의 Service로만 다룬다
+  - **트랜잭션**: Service의 public 메서드 하나가 use case 하나이자 트랜잭션 하나다. 외부 HTTP 호출이 있는 use case는 Facade를 따로 만들지 않고 `TransactionTemplate`으로 tx1 → 호출 → tx2를 코드 블록으로 나눈다
+  - **에러**: 기능별 `ErrorCode` enum + `BusinessException` → `GlobalExceptionHandler`가 `ProblemDetail`(RFC 9457) + `code`로 통일한다. Spring 기본 예외(검증 실패, 헤더 누락, 잘못된 JSON)도 같은 모양으로 나간다
+  - **규칙을 테스트로 강제**: `ArchitectureTest`(ArchUnit)가 계층 규칙, 다른 기능 Repository 사용 금지, 기능 사이 순환 금지, `global`의 기능 의존 금지, `@Transactional` 위치, 필드 주입 금지를 빌드마다 검사한다
+- **이번에 추가한 라이브러리**
+
+  | 라이브러리 | 왜 | 버린 대안 |
+  |---|---|---|
+  | ArchUnit (`archunit-junit5` 1.3.0, 테스트 전용) | 구조 규칙을 사람이 기억하지 않아도 테스트가 막는다 | 코드 리뷰로만 지키기: 이번처럼 어긴 줄 모르고 지나간다 |
+  | Lombok | 생성자 주입(`@RequiredArgsConstructor`), Entity `@Getter`, `@Slf4j`의 반복 코드를 줄인다. Entity에는 `@Getter`·`@NoArgsConstructor(PROTECTED)`만 쓰고 `@Data`·`@Setter`는 쓰지 않는다 | 직접 작성: 결제까지 그렇게 했는데 getter만으로 파일이 길어져 읽을 곳이 흐려졌다 |
+  | `spring-boot-starter-validation` | 요청 형식 검증을 Request DTO의 `@NotNull`·`@Valid`로 한다 | Service에서 null을 직접 검사: 형식 검증과 업무 규칙이 섞인다 |
+- **바꾼 것 (이전 → 이후)**
+  - `common.status.StatusTransitionService` → 조건부 UPDATE는 각 기능 Service(`OrderService.markPaid`, `PaymentConfirmService`)가 **자기 Repository로** 하고, 성공했을 때만 `history.service.StatusHistoryService`에 이력을 남긴다. 여러 기능이 함께 쓰는 업무 코드는 주인 기능을 따로 만든다는 기준(§3-3)을 따랐다
+  - `common.callback` → `callback` 기능(`CallbackLogService`, `Hmac`)
+  - `PaymentFacade` + `PaymentTxService` → `PaymentService.pay` 하나에서 `TransactionTemplate`으로 나눔. 승인 응답·웹훅·대사가 함께 쓰는 확정 로직은 `PaymentConfirmService`(다른 빈의 `@Transactional`)로 둔다(§7-2)
+  - `payment.PgClient`(구체 클래스) → `infra.pg.PgClient`(인터페이스) + `HttpPgClient`. 타임아웃·5xx는 "결과 모름"(빈 Optional)으로, 조회 실패는 우리 예외로 바꾼다
+  - `mock.pg` → `mockpg` 기능 패키지(계층 포함)
+  - `@Value` 여러 곳 → `@ConfigurationProperties` record(`OrderProperties`, `PaymentProperties`, `PgProperties`, `MockPgProperties`)
+  - 직접 넣던 생성 시각 → `BaseTimeEntity`(JPA Auditing, `Clock` 기준). V1·V3에 `created_at`·`updated_at`을 넣었다. 아직 develop에 합쳐지지 않은 마이그레이션이라 새 버전을 만들지 않고 파일을 직접 고쳤다(ADR-07 규칙은 "이미 적용·공유된 파일"이 대상). 로컬 DB는 `docker compose down -v`로 지우고 다시 만들어야 한다
+- **문서와 다르게 하는 점 (프로젝트 규칙 우선, ARCHITECTURE.md §1)**
+  - 결제·콜백 기록 행은 정적 팩토리 대신 네이티브 `INSERT ... ON CONFLICT DO NOTHING`으로 만든다. 같은 키의 중복 생성을 DB가 막게 하기 위해서다(CLAUDE.md §3-3). 네이티브 쿼리는 Auditing을 거치지 않아 `created_at`·`updated_at`을 쿼리에서 직접 넣는다
+  - 모의 PG의 웹훅 발송(`MockPgWebhookSender`)은 `infra`를 거치지 않고 서비스에서 직접 HTTP를 보낸다. 모의 PG는 "외부 시스템 자신"이라 우리 쪽 연동 규칙의 대상이 아니라고 봤다
+  - 테스트는 과제 필수 테스트와 `ArchitectureTest`만 둔다. 문서 §16은 기능마다 Controller·Service 테스트를 요구하지만, 이 과제에서는 설명할 코드를 늘리지 않는 쪽을 택했다. 대신 흐름은 docker compose로 직접 호출해 확인하고 커밋에 결과를 적는다
+- **고려한 대안**
+
+  | 대안 | 장점 | 버린 이유 |
+  |---|---|---|
+  | ADR-08 그대로 + 규칙만 문서에 추가 | 다시 짤 필요가 없음 | 지금도 규칙을 어긴 채 통과하고 있었다. 테스트로 막지 않으면 기능이 늘수록 모양이 더 갈라진다 |
+  | 계층 우선(`controller/`, `service/` 아래에 모든 기능) | 처음 보기에 단순 | 결제 하나를 고칠 때 폴더 다섯 개를 오간다. 기능 사이 의존이 import에서 보이지 않는다 |
+  | 헥사고날(포트와 어댑터) | 외부 연동 교체에 가장 유연 | 파일 수가 크게 늘고 설명할 개념(포트, 어댑터, 유스케이스 인터페이스)이 많아진다. 외부 연동 교체는 `infra`의 인터페이스로 충분하다 |
+  | 결제 PR을 먼저 합치고 나중에 정리 | 이력이 단순 | 다음 기능(발급)이 옛 구조 위에서 시작된다. 기능이 적은 지금 바꾸는 비용이 가장 작다 |
+- **근거 (1년차 말투)**: "결제까지 만들고 점검해 보니 같은 프로젝트 안에서도 기능마다 모양이 달랐고, 다른 기능의 Repository를 가져다 쓰거나 패키지끼리 서로 import하는 순환도 있었습니다. 저 혼자 규칙을 기억하는 것으로는 막을 수 없다고 생각해서, 회사 기준 문서(ARCHITECTURE.md)에 맞춰 구조를 다시 잡고 ArchUnit으로 규칙을 테스트에 넣었습니다. 이제 규칙을 어기면 빌드가 실패합니다. 기능이 결제 하나뿐일 때 바꾸는 게 가장 싸다고 판단해서 발급을 만들기 전에 바꿨습니다."
+- **처음 써 봄?**: ✍️ (ArchUnit, `TransactionTemplate`, `ProblemDetail`, `@ConfigurationProperties` record 중 처음 써 본 것과 익힌 방법)
+- **한계와 바꿀 조건**
+  - 기능이 같은 패턴(조건부 UPDATE → 이력)을 각자 갖고 있어 코드가 조금 반복된다. 기능이 많아져 반복이 문제가 되면 공통 부분을 `history` 쪽으로 옮기는 것을 다시 검토한다
+  - 기능 사이 호출(결제 → 주문)은 Service를 직접 부른다. 순환이 생길 상황이 오면 이벤트(§6.4)로 바꾼다
+  - 모듈 경계가 패키지뿐이라 다른 사람이 규칙을 어기는 것은 `ArchitectureTest`가 막는 범위까지만 막힌다

@@ -1,0 +1,14 @@
+package {{base}}.{{feature}}.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+// 형식 검증은 여기서. Service에는 toCommand()로 넘긴다 (ARCHITECTURE.md §6.3, §8, §11)
+public record {{Feature}}CreateRequest(
+        @NotBlank @Size(max = 30) String code,
+        @NotBlank @Size(max = 100) String name) {
+
+    public {{Feature}}CreateCommand toCommand() {
+        return new {{Feature}}CreateCommand(code, name);
+    }
+}
