@@ -11,7 +11,7 @@
 |---|---|---|---|
 | 01 | 프론트 라우터 | Next.js 15 **App Router** | 공식 기본값, 서버/클라이언트 경계를 파일 단위로 명확히 나눌 수 있음 |
 | 02 | 데이터 패칭 | Server Component fetch + **TanStack Query** 폴링 | 초기 표시는 서버에서, 발급 대기는 폴링 중단 조건을 선언적으로 |
-| 03 | 백엔드 언어 | **Java 17 + Spring Boot 3.3 + Gradle** | 익숙함, Boot 3.x 최소 요구가 Java 17 |
+| 03 | 백엔드 언어 | **Java 17 + Spring Boot 3.5 + Gradle** | 익숙함, Boot 3.x 최소 요구가 Java 17 |
 | 04 | ORM/쿼리 | **Spring Data JPA + 네이티브 조건부 쿼리** | CRUD는 빠르게, 동시성 핵심은 SQL로 눈에 보이게 |
 | 05 | 비동기 | **AFTER_COMMIT 이벤트 + @Async + @Scheduled** | 브로커 없이 "즉시 처리 + DB 기반 안전망" |
 | 06 | DB | **PostgreSQL 16** | 회사 사용 DB, `ON CONFLICT`·`timestamptz`·부분 인덱스 |
@@ -63,9 +63,11 @@
 - **처음 써 봄?**: ✍️
 - **한계**: 사용자 1만 명이 동시에 대기 화면에 있으면 2초마다 1만 요청이 온다. 그 규모라면 SSE나 지수적으로 늘어나는 폴링 간격을 고려한다
 
-### ADR-03. Java 17 + Spring Boot 3.3 + Gradle
+### ADR-03. Java 17 + Spring Boot 3.5 + Gradle
 
-- **결정**: Java 17, Spring Boot 3.3.x, Gradle(Groovy DSL, wrapper 포함)
+- **결정**: Java 17, Spring Boot 3.5.16, Gradle 8.14.6(Groovy DSL, wrapper 포함)
+- **버전을 바꾼 이유**: 처음에는 3.3으로 정했는데, 3.3은 오픈소스 지원이 끝난 버전이었다. 4.x는 Spring Framework 7·Jackson 3 등 바뀐 것이 많아 3.x 자료가 맞지 않는 곳이 생기므로, 3.x의 마지막 라인인 3.5를 골랐다
+- **만든 방법**: Spring Initializr(start.spring.io)가 이제 4.x 프로젝트만 만들어 줘서, Gradle wrapper 파일만 받고 `build.gradle`은 3.5 기준으로 직접 썼다. wrapper jar는 Gradle 공식 체크섬과 같은지 확인했다
 - **대안**: Kotlin(간결하지만 처음 배우는 것이 하나 더 늘어남), Maven(익숙도 차이 외 큰 차이 없음), Java 21(가상 스레드가 있지만 로컬에 17만 설치되어 있고 이 과제에 꼭 필요하지 않음)
 - **근거**: "Java와 Spring은 써 본 적이 있어서 익숙한 쪽을 골랐습니다. Next.js가 처음이라 백엔드까지 새로운 걸 쓰면 둘 다 설명을 못 할 것 같았습니다. Boot 3.x는 Java 17 이상이 필수라서 17로 맞췄습니다."
 - **처음 써 봄?**: ✍️ (Spring Boot 3에서 처음 접한 것, 예: `RestClient`, `jakarta.*` 패키지)

@@ -12,7 +12,7 @@
 
 ## 2. 기술 스택 (근거: `docs/02_기술선택_ADR.md`)
 
-- Backend: Java 17, Spring Boot 3.3, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway
+- Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway
 - Frontend: Next.js 15 App Router, TypeScript, TanStack Query
 - DB: PostgreSQL 16 (로컬 docker compose, 배포 AWS RDS) / 배포: AWS EC2
 - 모의 PG·공급사: 같은 앱의 `mock.pg`, `mock.supplier` 패키지. 호출은 반드시 **실제 HTTP**(RestClient)
@@ -55,4 +55,11 @@
 
 ## 7. 명령어
 
-아직 앱 코드가 없다. 구현하면서 **실제로 실행해 확인한 명령만** 여기에 추가한다.
+구현하면서 **실제로 실행해 확인한 명령만** 여기에 추가한다.
+
+```bash
+cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend)
+curl localhost:8080/actuator/health                          # {"status":"UP"}
+docker compose down -v                                       # 정리 (DB 볼륨까지 삭제)
+cd backend && JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew test   # 테스트 (도커 실행 중이어야 함)
+```
