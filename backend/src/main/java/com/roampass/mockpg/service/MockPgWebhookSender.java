@@ -26,7 +26,7 @@ public class MockPgWebhookSender {
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final RestClient restClient;
-    private final String secret;
+    private final MockPgProperties properties;
 
     public MockPgWebhookSender(TaskScheduler scheduler, ObjectMapper objectMapper, Clock clock,
                                RestClient.Builder builder, MockPgProperties properties) {
@@ -34,7 +34,7 @@ public class MockPgWebhookSender {
         this.objectMapper = objectMapper;
         this.clock = clock;
         this.restClient = builder.clone().baseUrl(properties.callbackBaseUrl()).build();
-        this.secret = properties.webhookSecret();
+        this.properties = properties;
     }
 
     public void schedule(MockPgPaymentResponse result, MockPgSettings settings) {
@@ -50,7 +50,7 @@ public class MockPgWebhookSender {
             byte[] json = objectMapper.writeValueAsBytes(body);
             restClient.post().uri("/api/webhooks/pg")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .header("X-Signature", Hmac.sign(json, secret))
+                    .header("X-Signature", Hmac.sign(json, properties.webhookSecret()))
                     .body(json)
                     .retrieve()
                     .toBodilessEntity();
