@@ -18,14 +18,6 @@ docker compose up -d --build --wait
 
 정리: `docker compose down -v`
 
-## 배포
-
-- **화면**: https://43-200-178-3.sslip.io (어드민: https://43-200-178-3.sslip.io/admin)
-- **백엔드**: 같은 주소의 `/api/...` (예: https://43-200-178-3.sslip.io/api/plans)
-- AWS EC2 한 대(Ubuntu 24.04, 메모리 1GB + 스왑 2GB)에 `docker-compose.prod.yml`로 Caddy(HTTPS), 화면, 서버, PostgreSQL을 함께 띄웁니다. DB도 컨테이너이고 RDS는 쓰지 않습니다(ADR-12)
-- 모의 공급사 콜백은 공개 주소(`APP_PUBLIC_BASE_URL`)로 돌아옵니다. 배포 직후 결제 한 건을 넣어 `ISSUING → ISSUED · SUPPLIER · CALLBACK`이 타임라인에 찍히는 것을 확인했습니다
-- 절차와 막혔던 지점은 [L5 배포 가이드](docs/learn/L5_AWS_프리티어_배포.md), 결정과 근거는 [10 배포 계획](docs/10_배포_계획.md)에 있습니다
-
 ## 현재 한계 (작업 중, 보완 예정)
 
 - **발급 재요청이 없습니다.** 공급사 발급 요청이 실패하거나 콜백이 오지 않으면 주문이 `ISSUING`에 남습니다. 재요청(최대 3회) → `ISSUE_FAILED` → 자동 환불은 다음 보완 단계에서 만듭니다

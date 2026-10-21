@@ -20,7 +20,7 @@
 | 09 | 모의 PG·공급사 위치 | **같은 앱, 별도 패키지, 실제 HTTP 호출** | 배포 1개 + 네트워크 문제 재현 |
 | 10 | HTTP 클라이언트 | **Spring RestClient** | 동기 코드, 타임아웃 설정 간단 |
 | 11 | 테스트 | **JUnit5 + Testcontainers** (Awaitility는 발급 단계에서) | H2로는 동시성·`ON CONFLICT` 재현 불가 |
-| 12 | 배포 | **AWS 프리티어 EC2 한 대 + docker compose (DB도 컨테이너)** | 서버가 잠들지 않아 스케줄러 유지, 로컬과 같은 구성 |
+| 12 | 배포 | **AWS 프리티어 EC2 + RDS** | 서버가 잠들지 않아 스케줄러 유지 |
 | 13 | 서명 | **HMAC-SHA256 (JDK `javax.crypto`)** | 과제 명세, 외부 라이브러리 불필요 |
 | 14 | PR 화면 캡처 | **Playwright MCP** | 같은 조건으로 before/after 캡처. 필수 테스트는 백엔드에서 증명 |
 | 15 | 백엔드 구조 | **레이어드 아키텍처 (기능 우선 패키지 + 계층) + ArchUnit·Lombok·validation** | 모든 기능이 같은 모양, 규칙을 테스트로 강제 |
@@ -120,7 +120,7 @@
 
 ### ADR-06. PostgreSQL 16
 
-- **결정**: PostgreSQL. 로컬과 배포 모두 docker compose의 `postgres:16-alpine` 컨테이너(배포는 ADR-12)
+- **결정**: PostgreSQL. 로컬은 docker compose, 배포는 AWS RDS
 - **대안**: MySQL(익숙할 수 있으나 `ON CONFLICT DO NOTHING`·부분 인덱스가 없거나 다름), H2(설치가 필요 없지만 운영 DB와 동작이 다름)
 - **근거**
   - 회사가 PostgreSQL을 쓴다고 과제에 적혀 있다
@@ -162,15 +162,10 @@
 - **근거**: "중복 방지를 DB 제약으로 했기 때문에 테스트도 진짜 PostgreSQL로 해야 의미가 있다고 생각했습니다." (→ [L4](learn/L4_동시성_테스트_도구.md))
 - **처음 써 봄?**: ✍️
 
-### ADR-12. 배포: AWS 프리티어 EC2 한 대 + docker compose (DB도 컨테이너)
+### ADR-12. 배포: AWS 프리티어 (EC2 + RDS)
 
-- 상세는 `10_배포_계획.md`, [L5](learn/L5_AWS_프리티어_배포.md), 실제 파일은 `docker-compose.prod.yml`, `deploy/Caddyfile`, `deploy/prod.env.example`
+- 상세는 `10_배포_계획.md`, [L5](learn/L5_AWS_프리티어_배포.md)
 - **한 줄 근거**: "Render 같은 무료 PaaS는 15분간 요청이 없으면 서버가 잠들어 스케줄러가 멈춥니다. 이 과제는 스케줄러가 '결제됐는데 발급 안 된 주문'을 끝내는 구조라서 잠들지 않는 EC2를 골랐습니다."
-- **변경 (2026-10-21)**: 처음엔 DB를 RDS로 두려 했지만 **EC2 안의 postgres 컨테이너**로 바꿨다
-  - 이유: 로컬 `docker-compose.yml`과 같은 구성이라 "로컬에서 되면 서버에서도 된다"를 설명하기 쉽다. 만들 AWS 리소스(RDS, DB 보안 그룹)와 과금 확인 대상이 줄어든다
-  - 메모리: 로컬에서 운영 compose를 띄워 보니 backend 약 424MB, frontend 43MB, postgres 38MB, Caddy 16MB(합계 약 520MB)였다. 1GB 서버에 맞추려고 JVM `-Xmx384m`, postgres `shared_buffers=64MB`·`max_connections=30`, swap 2GB를 둔다
-  - 포기한 것: RDS의 자동 백업·패치. EC2 디스크가 사라지면 데이터도 사라진다. 과제 시연 데이터라 받아들였고, 필요하면 `pg_dump`로 백업한다
-  - 바꿀 조건: 실제 운영 데이터가 생기거나 서버를 여러 대로 늘리면 DB를 RDS 같은 관리형으로 분리한다
 
 ### ADR-13. HMAC-SHA256 서명 (JDK 기본 기능)
 
