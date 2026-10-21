@@ -2,6 +2,7 @@
 #   배포 job은 environment 'production'을 사용 → Settings에서 Required reviewers를 걸면 승인 후 배포(수동 게이트)
 #   EC2가 준비되기 전에는 저장소 변수 DEPLOY_ENABLED를 설정하지 않으면 배포 job이 건너뛰어진다.
 # 필요한 설정: secrets.EC2_HOST, secrets.EC2_SSH_KEY / vars.SITE_DOMAIN, vars.DEPLOY_ENABLED=true
+# 서버는 Ubuntu 24.04라서 접속 계정이 ubuntu다 (Amazon Linux라면 ec2-user)
 name: CD
 
 on:
@@ -74,13 +75,13 @@ jobs:
       # 이미지와 같은 커밋의 compose·Caddyfile을 보낸다 → 설정 파일과 이미지 버전이 어긋나지 않는다
       - name: 설정 파일 복사
         run: |
-          ssh -i ~/.ssh/ec2.pem "ec2-user@${{ secrets.EC2_HOST }}" "mkdir -p ~/roampass/deploy"
-          scp -i ~/.ssh/ec2.pem docker-compose.prod.yml "ec2-user@${{ secrets.EC2_HOST }}:~/roampass/"
-          scp -i ~/.ssh/ec2.pem deploy/Caddyfile deploy/prod.env.example "ec2-user@${{ secrets.EC2_HOST }}:~/roampass/deploy/"
+          ssh -i ~/.ssh/ec2.pem "ubuntu@${{ secrets.EC2_HOST }}" "mkdir -p ~/roampass/deploy"
+          scp -i ~/.ssh/ec2.pem docker-compose.prod.yml "ubuntu@${{ secrets.EC2_HOST }}:~/roampass/"
+          scp -i ~/.ssh/ec2.pem deploy/Caddyfile deploy/prod.env.example "ubuntu@${{ secrets.EC2_HOST }}:~/roampass/deploy/"
       # 이미지는 방금 올린 커밋 태그(IMAGE_TAG)를 받는다. 서버의 .env는 건드리지 않는다
       - name: 새 이미지로 교체
         run: |
-          ssh -i ~/.ssh/ec2.pem "ec2-user@${{ secrets.EC2_HOST }}" \
+          ssh -i ~/.ssh/ec2.pem "ubuntu@${{ secrets.EC2_HOST }}" \
             "cd ~/roampass \
              && export IMAGE_TAG=${{ github.sha }} \
              && docker compose -f docker-compose.prod.yml pull \
