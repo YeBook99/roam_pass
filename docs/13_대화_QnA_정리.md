@@ -13,7 +13,7 @@
 | 1 | 진행 방식 | 지금은 **구현하지 않고** 설계 문서·근거·학습 가이드·하네스만 만든다 | `docs/00`~`11` |
 | 2 | 백엔드 | Java 17 + Spring Boot 3.3(이후 3.5로 변경, ADR-03) + **JPA (+ 네이티브 조건부 쿼리)**. MyBatis·JdbcTemplate 없이 | ADR-03, ADR-04 |
 | 3 | 모의 PG·공급사 | 같은 Spring 앱 안 별도 패키지, 호출은 실제 HTTP | ADR-09 |
-| 4 | 배포 | **AWS 프리티어 (EC2 + RDS)**. 이번엔 문서만 → 2026-10-21 **EC2 한 대 + docker compose(DB 컨테이너)**로 변경(ADR-12) | `docs/10`, `learn/L5` |
+| 4 | 배포 | **AWS 프리티어 (EC2 + RDS)**. 이번엔 문서만 | `docs/10`, `learn/L5` |
 | 5 | 문서 수준 | 1년차, **Next.js 처음** 기준. 처음 나오는 용어는 학습 가이드로 설명 | `docs/learn/` |
 | 6 | 언어 | 모든 대화·문서는 한국어 | — |
 | 7 | 브랜치 | `main` ← `develop` ← `<type>/<scope>-<설명>`. 기능마다 브랜치, develop으로 PR | `docs/12`, `/branch-pr` |
@@ -85,7 +85,7 @@
 | `@Scheduled` | 주기 실행. `@Async`에서 놓친 일을 DB 상태를 보고 다시 주워 가는 안전망 | `L2` §5 |
 | ExecutorService | 스레드풀에 일을 던지는 Java 표준 도구. 여러 스레드가 동시에 실행하게 한다 | `L4` §2 |
 | CountDownLatch | 숫자가 0이 될 때까지 기다리는 관문. ready/start/done 3개로 "진짜 동시에" 출발시킨다 | `L4` §3 |
-| AWS 프리티어 배포 | EC2 1대(docker compose, DB도 컨테이너). **2025-07-15 이후 가입 계정은 크레딧 방식 6개월 Free plan**이므로 Billing에서 먼저 확인 | `L5` |
+| AWS 프리티어 배포 | EC2 1대(docker compose) + RDS. **2025-07-15 이후 가입 계정은 크레딧 방식 6개월 Free plan**이므로 Billing에서 먼저 확인 | `L5` |
 
 **"설치 추적의 신뢰도 순서"란?**
 설치 여부를 알려 주는 정보 출처(신호)가 세 가지이고, 서로 다른 말을 할 때 **무엇을 기준으로 삼을지** 정한 순서다.
@@ -107,7 +107,7 @@
 
 **결과**
 - 브랜치: `.githooks/pre-commit`이 main/develop 직접 커밋과 잘못된 브랜치 이름을 막는다. Claude hook은 보호 브랜치 push를 막는다 → `/branch-pr` 스킬
-- CI/CD: `ci.yml`(수동 실행), `pr-guide.yml`(PR마다 `manual-ci` 대기 상태 + 안내), `cd.yml`(main → GHCR → 승인 후 EC2). actionlint로 검증했다
+- CI/CD: `ci.yml`(수동 실행), `pr-guide.yml`(PR마다 `manual-ci` 대기 상태 + 안내), `cd.yml`(main → GHCR → 승인 후 EC2). actionlint로 검증했다 → 2026-10-22 배포를 처음부터 다시 하기로 하면서 `cd.yml`은 지웠다
 - UI 캡처: `.mcp.json`(Playwright MCP headless) + `/ui-screenshot` 스킬
 
 ---

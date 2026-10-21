@@ -8,6 +8,9 @@ set -euo pipefail
 
 BASE="${1:?base ref 필요 (예: origin/develop)}"
 LEGACY_BASELINE="d68642a846619642f65b43307c6e8a8012fd7d68"   # chore(harness): 개발 워크플로 스킬 추가
+# 규칙이 나중에 바뀌어 지금은 통과하지 못하는 옛 커밋. 이미 develop·main에 합쳐져 고칠 수 없다
+#   2f38559 test(e2e): e2e를 없애면서 scope e2e가 허용 목록에서 빠졌다. 첫 main 릴리스(PR #20) 때 걸렸다
+LEGACY_COMMITS=("2f38559a356b78e5367bc2da5e92d46b28359ac7")
 TMP="$(mktemp)"
 FAIL=0
 COUNT=0
@@ -18,6 +21,7 @@ if git cat-file -e "${LEGACY_BASELINE}^{commit}" 2>/dev/null; then
 fi
 
 for sha in $(git rev-list --no-merges "${BASE}..HEAD" "${EXCLUDE[@]}"); do
+  if [[ " ${LEGACY_COMMITS[*]} " == *" $sha "* ]]; then continue; fi
   COUNT=$((COUNT + 1))
   git log -1 --format=%B "$sha" > "$TMP"
   if ! node .githooks/commit-msg "$TMP" 2>/tmp/lint-err; then

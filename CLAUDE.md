@@ -14,7 +14,7 @@
 
 - Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway. 구조는 레이어드 설계 기준(`.claude/skills/layered-architecture/ARCHITECTURE.md`, ADR-15)
 - Frontend: Next.js 15 App Router, TypeScript, TanStack Query. 구조는 프론트 설계 기준(`.claude/skills/nextjs-architecture/ARCHITECTURE.md`, ADR-17)
-- DB: PostgreSQL 16 (로컬·배포 모두 docker compose의 컨테이너) / 배포: AWS EC2 한 대에 `docker-compose.prod.yml` (RDS 안 씀, ADR-12)
+- DB: PostgreSQL 16 (로컬 docker compose, 배포 AWS RDS) / 배포: AWS EC2
 - 외부 연동(PG·공급사 호출): `infra.{시스템}`의 Client 인터페이스 뒤에 둔다
 - 모의 PG·공급사: 같은 앱의 `mockpg`, `mocksupplier` 기능 패키지. 호출은 반드시 **실제 HTTP**(RestClient)
 - 테스트: JUnit5 + Testcontainers + ArchUnit(구조 규칙). 과제 필수 테스트와 `ArchitectureTest`만 둔다
