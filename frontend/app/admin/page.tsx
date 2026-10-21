@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { FreshnessBadge } from '@/components/FreshnessBadge';
 import { KstTime } from '@/components/KstTime';
+import { StatusPill } from '@/components/StatusPill';
 import { AdminFilters } from '@/features/admin/components/AdminFilters';
 import { RefreshControls } from '@/features/admin/components/RefreshControls';
 import { getAdminOrders } from '@/features/admin/server';
@@ -33,10 +34,14 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   } catch (e) {
     if (e instanceof ApiError && e.status === 400) {
       return (
-        <div className="stack">
-          <h1>어드민 · 주문 목록</h1>
-          <p className="error">필터 값이 올바르지 않습니다: {e.message}</p>
-          <Link href="/admin">필터 초기화</Link>
+        <div className="page">
+          <div className="title-row">
+            <h1>주문</h1>
+          </div>
+          <section className="card stack">
+            <p className="error">필터 값이 올바르지 않습니다: {e.message}</p>
+            <Link href="/admin">필터 초기화</Link>
+          </section>
         </div>
       );
     }
@@ -56,58 +61,80 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   };
 
   return (
-    <div className="stack">
-      <h1>어드민 · 주문 목록</h1>
-      {/* key가 바뀌면 컴포넌트를 새로 만든다 → URL이 바뀌면(초기화, 뒤로 가기) 폼 값도 URL과 같아진다 */}
-      <AdminFilters key={JSON.stringify(filters)} current={filters} />
-      <div className="row">
-        <FreshnessBadge fetchedAt={result.fetchedAt} />
-        <RefreshControls />
-        <span>총 {result.totalElements}건</span>
+    <div className="page">
+      {/* 제목 줄: 왼쪽에 제목과 건수, 오른쪽에 데이터가 몇 초 전 것인지와 새로고침 */}
+      <div className="title-row">
+        <div>
+          <h1>주문</h1>
+          <p className="subtitle">
+            조건에 맞는 주문 {result.totalElements.toLocaleString('ko-KR')}건 · 최근 주문이 위에 있어요
+          </p>
+        </div>
+        <div className="row">
+          <FreshnessBadge fetchedAt={result.fetchedAt} />
+          <RefreshControls />
+        </div>
       </div>
 
-      <section className="card">
-        <table>
-          <thead>
-            <tr>
-              <th>주문번호</th>
-              <th>사용자</th>
-              <th>종류</th>
-              <th>금액</th>
-              <th>주문 상태</th>
-              <th>결제 상태</th>
-              <th>설치 상태</th>
-              <th>주문 시각(KST)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {result.content.map((order) => (
-              <tr key={order.orderNo}>
-                <td>
-                  <Link href={`/admin/orders/${order.orderNo}`}>{order.orderNo}</Link>
-                </td>
-                <td>{order.userId}</td>
-                <td>{order.simType}</td>
-                <td>{order.amount.toLocaleString('ko-KR')}원</td>
-                <td>{order.orderStatus}</td>
-                <td>{order.payStatus ?? '-'}</td>
-                <td>{order.installStatus ?? '-'}</td>
-                <td>
-                  <KstTime iso={order.createdAt} />
-                </td>
+      {/* key가 바뀌면 컴포넌트를 새로 만든다 → URL이 바뀌면(초기화, 뒤로 가기) 폼 값도 URL과 같아진다 */}
+      <AdminFilters key={JSON.stringify(filters)} current={filters} />
+
+      <section className="card card-flush" aria-label="주문 목록">
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>주문번호</th>
+                <th>사용자</th>
+                <th>종류</th>
+                <th>주문</th>
+                <th>결제</th>
+                <th>설치</th>
+                <th className="num">금액</th>
+                <th className="num">주문 시각 (KST)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {result.content.map((order) => (
+                <tr key={order.orderNo}>
+                  <td>
+                    <Link href={`/admin/orders/${order.orderNo}`} className="mono">
+                      {order.orderNo}
+                    </Link>
+                  </td>
+                  <td>{order.userId}</td>
+                  <td>{order.simType}</td>
+                  <td>
+                    <StatusPill status={order.orderStatus} />
+                  </td>
+                  <td>
+                    <StatusPill status={order.payStatus} />
+                  </td>
+                  <td>
+                    <StatusPill status={order.installStatus} />
+                  </td>
+                  <td className="num">{order.amount.toLocaleString('ko-KR')}원</td>
+                  <td className="num">
+                    <KstTime iso={order.createdAt} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {result.content.length === 0 && page > lastPage && (
+          <p className="empty">
+            <Link href={pageHref(0)}>없는 페이지입니다. 첫 페이지로</Link>
+          </p>
+        )}
+        {result.content.length === 0 && page <= lastPage && <p className="empty">조건에 맞는 주문이 없습니다.</p>}
       </section>
-      {result.content.length === 0 && page > lastPage && <Link href={pageHref(0)}>없는 페이지입니다. 첫 페이지로</Link>}
-      {result.content.length === 0 && page <= lastPage && <p>조건에 맞는 주문이 없습니다.</p>}
 
       {/* 범위 밖 페이지(?page=99)면 페이지 링크를 숨긴다 */}
       {page <= lastPage && (
-        <div className="row">
+        <div className="row pager">
           {page > 0 && <Link href={pageHref(page - 1)}>← 이전</Link>}
-          <span>
+          <span className="muted num">
             {page + 1} / {lastPage + 1} 페이지
           </span>
           {page < lastPage && <Link href={pageHref(page + 1)}>다음 →</Link>}

@@ -44,13 +44,14 @@ frontend/
 │     ├─ server.ts               서버에서 부르는 조회 함수 (import 'server-only')
 │     ├─ client.ts               브라우저에서 부르는 함수 (폴링 조회, 버튼 요청)
 │     └─ components/             이 기능의 화면 조각. 브라우저용은 첫 줄에 'use client'
-├─ components/                   어느 기능에도 속하지 않는 조각 (KstTime, FreshnessBadge, UserIdForm)
+├─ components/                   어느 기능에도 속하지 않는 조각 (KstTime, FreshnessBadge, StatusPill, SimMark, SidebarNav, UserIdForm)
 └─ lib/                          기능을 모르는 도구
    ├─ api-error.ts               ApiError + 응답 처리 (ProblemDetail → code, detail)
    ├─ api-server.ts              서버용 fetch, 쿠키의 아이디 읽기 (import 'server-only')
    ├─ api-client.ts              브라우저용 fetch
    ├─ idempotency.ts             멱등키 만들기 (http에서도 동작)
    ├─ user.ts                    아이디 쿠키 이름, 쿠키 저장(브라우저 전용 saveUserId)
+   ├─ status-tone.ts             상태 문자열 → 표시 색 종류(정상·실패·진행 중·그 밖)
    └─ time.ts                    UTC → KST 표시
 ```
 

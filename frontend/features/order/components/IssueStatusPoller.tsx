@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { StatusPill } from '@/components/StatusPill';
 import { useEffect, useState } from 'react';
 import { fetchMyOrder } from '../client';
 import { ISSUE_FINAL_STATUSES, ORDER_STATUS_LABEL, type Order } from '../types';
@@ -45,10 +46,11 @@ export function IssueStatusPoller({ initial }: { initial: Order }) {
   const finished = ISSUE_FINAL_STATUSES.includes(order.status);
 
   return (
-    <section className="card stack">
-      <p>
-        현재 상태: <strong>{ORDER_STATUS_LABEL[order.status]}</strong>
-      </p>
+    <section className="card stack" aria-live="polite">
+      <div className="row">
+        <h2>현재 상태</h2>
+        <StatusPill status={order.status} label={ORDER_STATUS_LABEL[order.status]} />
+      </div>
 
       {order.status === 'ISSUED' && <Link href={`/my-sims/${order.orderNo}`}>내 SIM에서 설치 코드 보기</Link>}
       {order.status === 'PICKUP_READY' && <p>유심은 공항에서 받으실 수 있어요.</p>}
