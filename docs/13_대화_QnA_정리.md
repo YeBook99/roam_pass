@@ -107,7 +107,7 @@
 
 **결과**
 - 브랜치: `.githooks/pre-commit`이 main/develop 직접 커밋과 잘못된 브랜치 이름을 막는다. Claude hook은 보호 브랜치 push를 막는다 → `/branch-pr` 스킬
-- CI/CD: `ci.yml`(수동 실행), `pr-guide.yml`(PR마다 `manual-ci` 대기 상태 + 안내), `cd.yml`(main → GHCR → 승인 후 EC2). actionlint로 검증했다
+- CI/CD: `ci.yml`(수동 실행), `pr-guide.yml`(PR마다 `manual-ci` 대기 상태 + 안내), `cd.yml`(main → GHCR → 승인 후 EC2). actionlint로 검증했다 → 2026-10-22 배포를 처음부터 다시 하기로 하면서 `cd.yml`은 지웠다
 - UI 캡처: `.mcp.json`(Playwright MCP headless) + `/ui-screenshot` 스킬
 
 ---
