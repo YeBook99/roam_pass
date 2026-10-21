@@ -1,6 +1,6 @@
 ---
 name: branch-pr
-description: 기능 하나를 시작할 때 작업 브랜치를 만들고, 끝나면 커밋 정리 → push → develop 대상 PR 생성 → CI 수동 실행 안내까지 진행한다. "기능 시작", "브랜치 만들어", "PR 올려줘", "작업 마무리" 요청 시 사용.
+description: 기능 하나를 시작할 때 작업 브랜치를 만들고, 끝나면 커밋 정리 → push → develop 대상 PR 생성 → 머지 후 CI 결과 확인까지 진행한다. "기능 시작", "브랜치 만들어", "PR 올려줘", "작업 마무리" 요청 시 사용.
 ---
 
 # 브랜치 → PR 흐름
@@ -11,7 +11,7 @@ description: 기능 하나를 시작할 때 작업 브랜치를 만들고, 끝�
 main      ── 배포되는 코드. develop → main PR로만 변경 (릴리스)
   ▲
 develop   ── 통합 브랜치. 작업 브랜치의 PR로만 변경. GitHub 기본 브랜치
-  ▲ PR (CI 수동 실행 통과 필수)
+  ▲ PR (로컬 테스트·시크릿 스캔·리뷰어 통과 후, CI는 머지 후 실행)
 feature/payment-webhook-idempotency   ── 기능 하나 = 브랜치 하나
 fix/payment-amount-check
 docs/interview-q3
@@ -54,11 +54,9 @@ git switch -c feature/<scope>-<설명> develop
    ```
    - 본문은 `.github/pull_request_template.md` 형식으로 채운다
    - UI 변경이면 `.mr-assets/<브랜치>/SCREENSHOTS.md` 표를 넣고, 이미지는 사용자가 PR 웹 화면에 드래그해서 첨부해야 한다고 안내한다
-4. **CI 수동 실행 안내** (자동으로 돌지 않는다)
-   - GitHub → Actions → **CI** → **Run workflow** → Branch에 이 브랜치 선택 → Run
-   - 또는 CLI: `gh workflow run ci.yml --ref <브랜치>`
-   - 성공하면 PR의 `manual-ci` 상태가 초록색이 되고, 그때 머지할 수 있다
-5. 사용자에게 PR 링크와 남은 할 일(CI 실행, 스크린샷 첨부, 리뷰)을 보고한다
+4. **CI는 PR 단계에서 돌지 않는다.** 머지(develop push) 후에 자동으로 돈다. 그래서 PR 전에 로컬에서 `./gradlew test`와 `git add` 후 시크릿 스캔을 반드시 한다
+5. 사용자에게 PR 링크와 남은 할 일(스크린샷 첨부, 리뷰)을 보고한다
+6. 머지 후 Actions → **CI**에서 develop push 실행 결과를 확인한다. 실패하면 develop에서 `fix/...` 브랜치를 만들어 바로 고친다
 
 ## 4. 머지 후
 ```bash
