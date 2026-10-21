@@ -304,6 +304,7 @@ export default nextConfig;
 | 상태가 안 바뀜(옛날 데이터) | fetch 캐시 | `cache: 'no-store'` + `dynamic = 'force-dynamic'` |
 | `params.orderNo`가 undefined | Next 15부터 `params`가 Promise | `const { orderNo } = await params` |
 | 날짜가 9시간 다르게 보임 | 브라우저/서버 타임존 차이 | `toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })` |
+| 자정이 `24:20`으로 보임 | `ko-KR` 형식에 `hour12: false`를 쓰면 0시를 24시로 쓴다 | `hourCycle: 'h23'` (`lib/time.ts`) |
 
 ## 14. 면접에서 말하는 법
 
