@@ -25,6 +25,7 @@
 
 | 틀 | 보여 주는 것 |
 |---|---|
+| `features/plan/types.ts` | `order/types.ts`가 가져다 쓰는 다른 기능 타입 (SimType) |
 | `features/order/types.ts` | 백엔드 dto와 1:1 타입, 상태 유니온, 폴링 멈춤 상태 상수 |
 | `features/order/server.ts` | `import 'server-only'` + `serverGet` |
 | `features/order/client.ts` | 브라우저 조회 함수 |

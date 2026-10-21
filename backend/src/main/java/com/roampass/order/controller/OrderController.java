@@ -5,6 +5,7 @@ import com.roampass.order.dto.OrderResponse;
 import com.roampass.order.service.OrderService;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,11 @@ public class OrderController {
                                                 @Valid @RequestBody OrderCreateRequest request) {
         OrderResponse response = orderService.create(userId, request.planId(), request.travelStartDate());
         return ResponseEntity.created(URI.create("/api/my/orders/" + response.orderNo())).body(response);
+    }
+
+    @GetMapping("/api/my/orders")
+    public List<OrderResponse> getMyOrders(@RequestHeader("X-User-Id") String userId) {
+        return orderService.getMyOrders(userId);
     }
 
     @GetMapping("/api/my/orders/{orderNo}")
