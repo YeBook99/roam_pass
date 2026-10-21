@@ -45,7 +45,7 @@ export default async function MySimDetailPage({ params }: { params: Promise<{ or
             개통 시각 <KstTime iso={profile.activatedAt} /> · 만료 시각 <KstTime iso={profile.expiresAt} />
           </p>
           {/* 만료 시각 = 개통 시각 + 일수 × 24시간. 개통 전이면 "-"로 보인다 */}
-          <QrReveal orderNo={order.orderNo} activationCode={profile.activationCode} />
+          <QrReveal orderNo={order.orderNo} />
           <RecheckButton orderNo={order.orderNo} />
         </section>
       )}

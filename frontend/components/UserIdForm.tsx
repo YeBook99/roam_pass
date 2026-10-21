@@ -23,7 +23,16 @@ export function UserIdForm({ currentUserId }: { currentUserId?: string }) {
     <form onSubmit={handleSubmit} className="row">
       <label>
         내 아이디{' '}
-        <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="예: demo" maxLength={64} />
+        {/* 아이디는 HTTP 헤더(X-User-Id)로 가는데, 헤더에는 한글을 넣을 수 없어서 영문·숫자·_-만 받는다 */}
+        <input
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          placeholder="예: demo"
+          maxLength={64}
+          pattern="[A-Za-z0-9_-]+"
+          title="영문, 숫자, _, -만 쓸 수 있어요"
+          required
+        />
       </label>
       <button type="submit">저장</button>
       {currentUserId && <span>{currentUserId}님으로 주문합니다</span>}

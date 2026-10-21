@@ -1,30 +1,26 @@
-'use client'; // 버튼을 눌러 코드를 펼치는 상태(useState)가 있어서 브라우저에서 돈다
+'use client'; // 버튼을 누르는 동작이 있어서 브라우저에서 돈다
 
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 import { viewQr } from '../client';
 
-// 동작: 설치 코드는 처음에 가려 둔다. [설치 코드 보기]를 누르면
-// 1) 백엔드에 "QR을 봤다"를 기록하고(ISSUED → QR_VIEWED) 2) 코드를 펼치고 3) router.refresh()로 위쪽 설치 상태를 다시 그린다
+// 동작: 처음에는 버튼만 있다. [설치 코드 보기]를 누르면
+// 1) 백엔드에 "코드를 봤다"를 기록하고(ISSUED → QR_VIEWED) 그 응답으로 설치 코드를 받는다
+// 2) 받은 코드를 보여 주고 3) router.refresh()로 위쪽 설치 상태를 다시 그린다
+// 코드는 버튼을 누른 뒤의 응답에만 있다. 페이지가 미리 코드를 브라우저로 보내지 않아서 "본 시각"이 정확하다
 // QR 이미지는 아직 그리지 않는다. 폰 설정 > eSIM 추가 > "직접 입력"에 이 코드를 넣어도 설치된다
-export function QrReveal({ orderNo, activationCode }: { orderNo: string; activationCode: string }) {
-  const [shown, setShown] = useState(false);
+export function QrReveal({ orderNo }: { orderNo: string }) {
   const router = useRouter();
-
   const view = useMutation({
     mutationFn: () => viewQr(orderNo),
-    onSuccess: () => {
-      setShown(true);
-      router.refresh();
-    },
+    onSuccess: () => router.refresh(),
   });
 
-  if (shown) {
+  if (view.data) {
     return (
       <div className="stack">
         <p>설치 코드 (폰 설정에서 직접 입력):</p>
-        <code className="code">{activationCode}</code>
+        <code className="code">{view.data.activationCode}</code>
       </div>
     );
   }

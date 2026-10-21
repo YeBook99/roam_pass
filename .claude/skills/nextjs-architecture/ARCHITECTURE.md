@@ -44,13 +44,13 @@ frontend/
 │     ├─ server.ts               서버에서 부르는 조회 함수 (import 'server-only')
 │     ├─ client.ts               브라우저에서 부르는 함수 (폴링 조회, 버튼 요청)
 │     └─ components/             이 기능의 화면 조각. 브라우저용은 첫 줄에 'use client'
-├─ components/                   여러 기능이 같이 쓰는 표시 조각 (KstTime, FreshnessBadge)
+├─ components/                   어느 기능에도 속하지 않는 조각 (KstTime, FreshnessBadge, UserIdForm)
 └─ lib/                          기능을 모르는 도구
    ├─ api-error.ts               ApiError + 응답 처리 (ProblemDetail → code, detail)
-   ├─ api-server.ts              서버용 fetch (import 'server-only')
+   ├─ api-server.ts              서버용 fetch, 쿠키의 아이디 읽기 (import 'server-only')
    ├─ api-client.ts              브라우저용 fetch
    ├─ idempotency.ts             멱등키 만들기 (http에서도 동작)
-   ├─ user.ts                    사용자 아이디 쿠키 이름
+   ├─ user.ts                    아이디 쿠키 이름, 쿠키 저장(브라우저 전용 saveUserId)
    └─ time.ts                    UTC → KST 표시
 ```
 
@@ -101,7 +101,7 @@ Server Component ──fetch(API_INTERNAL_URL + '/api/...')──▶ Spring
 3. 에러는 `ApiError(status, code, detail)` 하나로 바뀐다. 백엔드 `ProblemDetail`의 `code`로 분기하고, 사용자에게는 `detail`(한글 메시지)을 보여 준다
    - 서버 페이지에서 404면 `notFound()`를 불러 `not-found.tsx`를 보여 준다
    - 그 밖에 서버에서 처리하지 못한 에러는 `app/error.tsx`가 보여 준다. 운영 빌드에서 Next는 서버 에러 메시지를 숨기고 `digest`(로그 추적 번호)만 넘기므로 고정 문구 + digest를 보여 준다. 사용자에게 이유를 알려야 하는 에러(결제 불가 등)는 페이지나 컴포넌트에서 `ApiError`를 직접 처리한다
-4. 사용자 식별: 첫 화면에서 입력한 아이디를 쿠키(`roampass_user`)에 두고, 서버는 `cookies()`, 브라우저는 `document.cookie`로 읽어 `X-User-Id` 헤더에 붙인다. 운영자 아이디(`X-Admin-Id`)는 조치 API를 만들 때 같은 방식으로 추가한다
+4. 사용자 식별: 첫 화면에서 입력한 아이디를 쿠키(`roampass_user`)에 두고, 서버는 `cookies()`(`getUserId`), 브라우저는 `document.cookie`로 읽어 `X-User-Id` 헤더에 붙인다. 아이디가 없는데 `/api/my/*`를 조회하려 하면 `serverGet`이 첫 화면(`/`)으로 보낸다(`redirect`). 헤더에는 한글을 넣을 수 없어서 아이디는 영문·숫자·`_-`만 받는다. 운영자 아이디(`X-Admin-Id`)는 조치 API를 만들 때 같은 방식으로 추가한다
 
 ### 5.3 폴링 (TanStack Query `useQuery`)
 - `initialData`에 서버가 준 첫 데이터를 넣는다
