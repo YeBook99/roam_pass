@@ -1,5 +1,6 @@
 package com.roampass.infra.supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -10,7 +11,8 @@ import org.springframework.web.client.RestClient;
 public class SupplierClientConfig {
 
     @Bean
-    public SupplierClient supplierClient(RestClient.Builder builder, SupplierProperties properties) {
+    public SupplierClient supplierClient(RestClient.Builder builder, SupplierProperties properties,
+                                         ObjectMapper objectMapper) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.connectTimeout());
         requestFactory.setReadTimeout(properties.readTimeout());
@@ -19,6 +21,6 @@ public class SupplierClientConfig {
                 .baseUrl(properties.baseUrl())
                 .requestFactory(requestFactory)
                 .build();
-        return new HttpSupplierClient(restClient);
+        return new HttpSupplierClient(restClient, objectMapper);
     }
 }

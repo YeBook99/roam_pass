@@ -44,9 +44,14 @@ external:
     base-url: ${app.public-base-url}/mock/supplier   # 실제라면 공급사 주소. 지금은 같은 앱의 모의 공급사
     connect-timeout: 1s
     read-timeout: 3s
+    callback-secret: ${SUPPLIER_CALLBACK_SECRET}     # 공급사 콜백 서명 키
 
 mock:
   enabled: ${MOCK_ENABLED:false}  # 모의 PG API. 시연 환경(compose)에서만 켠다
   pg:
     webhook-secret: ${PG_WEBHOOK_SECRET}       # 원래는 PG가 발급하는 키. 모의 PG와 우리가 같은 값을 쓴다
     callback-base-url: ${app.public-base-url}  # 모의 PG가 웹훅을 보낼 우리 서버 주소
+  supplier:
+    callback-secret: ${SUPPLIER_CALLBACK_SECRET}   # 원래는 공급사와 나눠 가진 키. 모의 공급사와 우리가 같은 값을 쓴다
+    callback-base-url: ${app.public-base-url}      # 모의 공급사가 콜백을 보낼 우리 서버 주소
+    callback-delay-ms: 3000                        # 접수 후 콜백까지 기다리는 시간

@@ -1,5 +1,8 @@
 package com.roampass.infra.supplier;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.web.client.RestClientException;
 public class HttpSupplierClient implements SupplierClient {
 
     private final RestClient restClient;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Optional<String> requestIssue(String orderNo) {
@@ -28,7 +32,22 @@ public class HttpSupplierClient implements SupplierClient {
         }
     }
 
+    @Override
+    public Optional<SupplierIssueCallback> parseIssueCallback(byte[] body) {
+        try {
+            String raw = new String(body, StandardCharsets.UTF_8);
+            IssueCallbackMessage m = objectMapper.readValue(body, IssueCallbackMessage.class);
+            return Optional.of(new SupplierIssueCallback(m.supplierOrderNo(), m.orderNo(), m.iccid(), m.activationCode(), raw));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
     // 공급사 응답 형식: { "supplierOrderNo": "..." }
     record IssueResponse(String supplierOrderNo) {
+    }
+
+    // 공급사 콜백 형식: { "supplierOrderNo", "orderNo", "iccid", "activationCode" }
+    record IssueCallbackMessage(String supplierOrderNo, String orderNo, String iccid, String activationCode) {
     }
 }

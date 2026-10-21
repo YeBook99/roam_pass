@@ -108,6 +108,26 @@ public class OrderService {
         orderRepository.recordSupplierOrderNo(orderId, supplierOrderNo, Instant.now(clock));
     }
 
+    // 발급 콜백이 어느 주문 것인지 찾는다. 먼저 공급사 접수번호로 찾고,
+    // 없으면 콜백에 같이 온 우리 주문번호로 찾는다 (접수번호 저장 전에 서버가 죽었을 수 있다, docs/05 §6)
+    @Transactional
+    public Optional<Long> findOrderIdForSupplier(String supplierOrderNo, String orderNo) {
+        Optional<SimOrder> bySupplier = orderRepository.findBySupplierOrderNo(supplierOrderNo);
+        if (bySupplier.isPresent()) {
+            return Optional.of(bySupplier.get().getId());
+        }
+        Optional<SimOrder> byOrderNo = orderRepository.findByOrderNo(orderNo);
+        byOrderNo.ifPresent(order -> orderRepository.recordSupplierOrderNo(order.getId(), supplierOrderNo, Instant.now(clock)));
+        return byOrderNo.map(SimOrder::getId);
+    }
+
+    // 발급 완료: ISSUING→ISSUED. 이미 ISSUING이 아니면 false
+    @Transactional
+    public boolean markIssued(Long orderId) {
+        return transit(orderId, OrderStatus.ISSUING, OrderStatus.ISSUED, Actor.SUPPLIER, Signal.CALLBACK,
+                "발급 완료", Instant.now(clock));
+    }
+
     // 상태 선점: 허용된 전이인지 검사 → 조건부 UPDATE → 바뀌었을 때만 같은 트랜잭션에서 이력 (CLAUDE.md §3-2)
     private boolean transit(Long orderId, OrderStatus from, OrderStatus to, Actor actor, Signal signal,
                             String reason, Instant now) {

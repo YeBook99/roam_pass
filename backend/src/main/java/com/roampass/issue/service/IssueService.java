@@ -1,9 +1,16 @@
 package com.roampass.issue.service;
 
+import com.roampass.callback.domain.Hmac;
+import com.roampass.callback.service.CallbackLogService;
+import com.roampass.global.error.BusinessException;
 import com.roampass.infra.supplier.SupplierClient;
+import com.roampass.infra.supplier.SupplierIssueCallback;
+import com.roampass.infra.supplier.SupplierProperties;
+import com.roampass.issue.exception.IssueErrorCode;
 import com.roampass.order.domain.OrderPaidEvent;
 import com.roampass.order.service.OrderService;
 import com.roampass.plan.domain.SimType;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
@@ -18,6 +25,9 @@ public class IssueService {
 
     private final OrderService orderService;
     private final SupplierClient supplierClient;
+    private final SupplierProperties supplierProperties;
+    private final IssueConfirmService confirmService;
+    private final CallbackLogService callbackLogService;
 
     // 결제가 DB에 저장(커밋)된 뒤에, 별도 스레드에서 실행된다
     @Async
@@ -35,5 +45,21 @@ public class IssueService {
         Optional<String> supplierOrderNo = supplierClient.requestIssue(orderNo.get());
         // 3. 공급사 접수번호 저장. 실패하면 ISSUING으로 남는다 (다시 요청하는 건 보완 단계)
         supplierOrderNo.ifPresent(no -> orderService.recordSupplierOrderNo(event.orderId(), no));
+    }
+
+    // 공급사 발급 콜백. 결제 웹훅(PaymentService.receiveWebhook)과 같은 순서다
+    // 서명 검증 → 본문 읽기 → 반영. 처리하지 못한 콜백도 callback_log에 남긴다 (CLAUDE.md §3-4)
+    public void receiveCallback(byte[] body, String signature) {
+        String raw = new String(body, StandardCharsets.UTF_8);
+        if (!Hmac.verify(body, signature, supplierProperties.callbackSecret())) {
+            callbackLogService.recordRejected("SUPPLIER", raw, false, "SIGNATURE_INVALID");
+            throw new BusinessException(IssueErrorCode.INVALID_CALLBACK_SIGNATURE);
+        }
+        Optional<SupplierIssueCallback> callback = supplierClient.parseIssueCallback(body);
+        if (callback.isEmpty()) {
+            callbackLogService.recordRejected("SUPPLIER", raw, true, "INVALID_BODY");
+            throw new BusinessException(IssueErrorCode.INVALID_CALLBACK_BODY);
+        }
+        confirmService.confirm(callback.get());
     }
 }

@@ -12,6 +12,10 @@ public interface SimOrderRepository extends JpaRepository<SimOrder, Long> {
 
     Optional<SimOrder> findByOrderNoAndUserId(String orderNo, String userId);
 
+    Optional<SimOrder> findBySupplierOrderNo(String supplierOrderNo);
+
+    Optional<SimOrder> findByOrderNo(String orderNo);
+
     // 상태 선점: 현재 상태가 from일 때만 바꾼다. 반환값 1 = 내가 바꿈, 0 = 이미 다른 요청이 바꿈
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE sim_order SET status = :to, updated_at = :now WHERE id = :id AND status = :from",

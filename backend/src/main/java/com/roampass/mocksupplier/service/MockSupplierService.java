@@ -16,12 +16,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class MockSupplierService {
 
     private final MockSupplierOrderRepository orderRepository;
+    private final MockSupplierCallbackSender callbackSender;
 
     // 발급 요청 접수. 같은 주문번호로 다시 오면 처음 만든 접수번호를 그대로 돌려준다 (orderNo가 멱등키)
+    // 접수하고 몇 초 뒤 결과를 콜백으로 보낸다
     @Transactional
     public MockSupplierOrderResponse createOrder(MockSupplierOrderRequest request) {
         MockSupplierOrder order = orderRepository.findByOrderNo(request.orderNo())
                 .orElseGet(() -> orderRepository.save(MockSupplierOrder.create(request.orderNo())));
+        callbackSender.schedule(order);
         return new MockSupplierOrderResponse(order.getSupplierOrderNo());
     }
 }
