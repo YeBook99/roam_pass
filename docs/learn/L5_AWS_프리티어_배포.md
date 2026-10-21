@@ -1,4 +1,4 @@
-# L5. AWS 프리티어 배포 가이드 — EC2 + RDS + docker compose + Caddy
+# L5. AWS 프리티어 배포 가이드 — EC2 한 대 + docker compose(DB 포함) + Caddy
 
 > 목표: 돈을 쓰지 않고 과제를 배포하고, 그 과정을 README "배포한 곳 / 고른 이유 / 막혔던 지점"에 쓸 수 있게 된다
 > 결정과 근거는 `10_배포_계획.md`를 본다. 이 문서는 **절차와 주의점**만 다룬다
@@ -9,7 +9,7 @@
 ## 0. 한 줄 비유
 
 > - **EC2** = 빌린 컴퓨터 한 대(리눅스)
-> - **RDS** = AWS가 관리해 주는 PostgreSQL. 백업과 패치는 AWS가 한다
+> - **docker compose** = 컨테이너 여러 개(Caddy, 화면, 서버, DB)를 파일 하나로 같이 띄우는 도구. 로컬과 같은 방식이다
 > - **보안 그룹** = 컴퓨터 앞의 경비원. 허락된 포트와 출처만 들여보낸다
 > - **Caddy** = 현관 안내원. HTTPS 인증서를 알아서 받아 오고 요청을 프론트와 백엔드로 나눠 보낸다
 
@@ -36,7 +36,6 @@ AWS 무료 정책은 **계정을 만든 날짜**에 따라 다르다.
 - [ ] **리전은 하나만** 쓴다(서울 `ap-northeast-2`). 다른 리전에 실수로 만든 리소스는 찾기 어렵다
 - [ ] **퍼블릭 IPv4 주소는 2024년부터 시간당 과금 대상**이다(무료 한도나 크레딧으로 상쇄되는지 Billing에서 확인). 인스턴스는 1대만 둔다
 - [ ] **Elastic IP를 만들고 인스턴스에 연결하지 않은 채 두면 과금**된다
-- [ ] RDS: **Multi-AZ 끄기**, 스토리지 **20GB**, 스토리지 자동 확장 끄기, 템플릿은 "Free tier" 또는 "Sandbox"
 - [ ] EC2 디스크(EBS)는 **30GB 이하**
 - [ ] NAT Gateway, Load Balancer는 **만들지 않는다**(시간당 과금, 이 과제에 불필요)
 - [ ] 과제가 끝나면 §9 정리 절차를 따른다
@@ -45,49 +44,35 @@ AWS 무료 정책은 **계정을 만든 날짜**에 따라 다르다.
 
 ```
 [인터넷] ──443/80──▶ [EC2 보안그룹: 22(내 IP), 80, 443]
-                     EC2 (Amazon Linux 2023, t3.micro 또는 t2.micro)
-                     └ docker compose
-                        ├ caddy     :80/:443 → HTTPS, 라우팅
+                     EC2 (Amazon Linux 2023, t3.micro 또는 t2.micro, swap 2GB)
+                     └ docker compose -f docker-compose.prod.yml
+                        ├ caddy     :80/:443 → HTTPS, 라우팅 (밖으로 열린 유일한 컨테이너)
                         ├ frontend  :3000 (Next.js standalone)
-                        └ backend   :8080 (Spring Boot + 모의 PG·공급사)
-                              │ 5432
-                              ▼
-                     [RDS 보안그룹: 5432 ← EC2 보안그룹만]
-                     RDS PostgreSQL (db.t3.micro 또는 db.t4g.micro, 퍼블릭 액세스 없음)
+                        ├ backend   :8080 (Spring Boot + 모의 PG·공급사)
+                        └ postgres  :5432 (데이터는 볼륨 pgdata에 남는다)
 ```
+- RDS는 쓰지 않는다(ADR-12). DB도 로컬과 똑같이 compose의 컨테이너다
+- 3000, 8080, 5432는 **밖으로 열지 않는다.** 컨테이너끼리는 compose 내부망에서 서비스 이름(`backend`, `postgres`)으로 부른다
 
 ## 4. 단계별 절차
 
-### 4.1 보안 그룹 두 개
+### 4.1 보안 그룹 하나
 | 이름 | 인바운드 규칙 | 이유 |
 |---|---|---|
 | `roampass-ec2-sg` | SSH 22: **내 IP만** / HTTP 80: 0.0.0.0/0 / HTTPS 443: 0.0.0.0/0 | 80은 Let's Encrypt 인증서 발급과 HTTPS 리다이렉트에 필요 |
-| `roampass-rds-sg` | PostgreSQL 5432: **출처 = `roampass-ec2-sg`** | IP가 아니라 "EC2 보안 그룹"을 출처로 지정 → EC2에서만 DB 접근 가능 |
 
-> 8080, 3000 포트는 **열지 않는다.** 외부에서는 Caddy(443)를 통해서만 들어온다.
-
-### 4.2 RDS PostgreSQL 만들기
-1. RDS → 데이터베이스 생성 → **표준 생성** → PostgreSQL 16
-2. 템플릿: **프리 티어**(또는 Free plan에서 허용되는 최소 사양)
-3. DB 인스턴스 식별자 `roampass-db`, 마스터 사용자 `roampass`, 비밀번호는 **비밀번호 관리자에만 저장**(저장소에 절대 넣지 않음)
-4. 인스턴스 클래스: `db.t3.micro` 또는 `db.t4g.micro`
-5. 스토리지 20GB, **자동 확장 끄기**
-6. 연결: **퍼블릭 액세스 아니요**, VPC 보안 그룹은 `roampass-rds-sg`
-7. 추가 구성: 초기 데이터베이스 이름 `roampass`
-8. 생성 후 **엔드포인트**(예: `roampass-db.xxxx.ap-northeast-2.rds.amazonaws.com`)를 복사해 둔다
-
-### 4.3 EC2 만들기
+### 4.2 EC2 만들기
 1. EC2 → 인스턴스 시작 → **Amazon Linux 2023**
 2. 인스턴스 유형: "Free tier eligible" 표시가 있는 `t3.micro` 또는 `t2.micro`
 3. 키 페어 생성(`roampass-key.pem`). 다운로드한 파일은 **저장소 폴더 밖에** 보관한다
 4. 네트워크: 퍼블릭 IP 자동 할당 **활성화**, 보안 그룹 `roampass-ec2-sg`
-5. 스토리지 20~30GB gp3
+5. 스토리지 20~30GB gp3 (DB 데이터도 여기에 쌓인다)
 
-### 4.4 EC2 초기 설정 (SSH 접속 후)
+### 4.3 EC2 초기 설정 (SSH 접속 후)
 ```bash
 ssh -i roampass-key.pem ec2-user@<EC2 퍼블릭 IP>
 
-# Docker 설치
+# Docker, git 설치
 sudo dnf install -y docker git
 sudo systemctl enable --now docker
 sudo usermod -aG docker ec2-user        # 다시 로그인해야 적용됨
@@ -99,91 +84,80 @@ sudo curl -SL https://github.com/docker/compose/releases/download/v2.29.7/docker
 sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 docker compose version
 
-# 스왑 2GB (메모리 1GB 보완: JVM + Node가 함께 돌면 빠듯함)
+# 스왑 2GB (메모리 1GB 보완: JVM + Node + PostgreSQL이 함께 돈다)
 sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
 sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 free -h
+
+# 저장소를 받는다 (compose 파일과 Caddyfile이 필요하다. CD도 이 폴더를 쓴다)
+git clone https://github.com/YeBook99/roam_pass.git ~/roampass
 ```
 
-### 4.5 이미지는 EC2에서 빌드하지 않는다
+### 4.4 이미지는 EC2에서 빌드하지 않는다
 **이유**: Gradle 빌드와 Next.js 빌드는 메모리를 많이 쓴다. 1GB 서버에서 빌드하면 멈추거나 매우 느리다.
 
-방법 A — GitHub 컨테이너 레지스트리(GHCR, 무료):
-```bash
-# 내 PC에서 (Apple Silicon Mac이면 --platform 필수: EC2는 x86_64)
-docker buildx build --platform linux/amd64 -t ghcr.io/<내계정>/roampass-backend:latest ./backend --push
-docker buildx build --platform linux/amd64 -t ghcr.io/<내계정>/roampass-frontend:latest ./frontend --push
-# EC2에서
-docker login ghcr.io      # GitHub 토큰(read:packages)
-docker compose -f docker-compose.prod.yml pull
-```
+- **CD가 한다**: main에 머지되면 `.github/workflows/cd.yml`이 `linux/amd64` 이미지를 빌드해 GHCR(`ghcr.io/yebook99/roampass-backend`, `-frontend`)에 올린다
+- GHCR 패키지는 처음에 **비공개**다. 둘 중 하나를 한다
+  - GitHub → Packages → 각 패키지 → Package settings → **Public**으로 바꾸기 (시크릿이 이미지에 없으므로 공개해도 된다)
+  - 또는 EC2에서 `docker login ghcr.io` (GitHub 토큰, 권한 `read:packages`만)
 
-방법 B — 레지스트리 없이 파일로 전송:
+### 4.5 서버의 `.env` (저장소에 넣지 않음)
 ```bash
-docker save roampass-backend:latest | gzip | ssh -i roampass-key.pem ec2-user@<IP> 'gunzip | docker load'
+cd ~/roampass
+cp deploy/prod.env.example .env && chmod 600 .env   # 다른 사용자가 읽지 못하게
+vi .env    # 아래처럼 채운다. 시크릿은 openssl rand -hex 32 로 만든다
 ```
+| 키 | 값 | 쓰는 곳 |
+|---|---|---|
+| `SITE_DOMAIN` | `3-35-12-34.sslip.io` (EC2 퍼블릭 IP의 점을 하이픈으로) | Caddy가 인증서를 받을 이름 |
+| `APP_PUBLIC_BASE_URL` | `https://3-35-12-34.sslip.io` | 모의 PG 웹훅·모의 공급사 콜백이 돌아올 공개 주소 |
+| `POSTGRES_PASSWORD` | 랜덤 | postgres 컨테이너와 backend가 같은 값을 쓴다 |
+| `PG_WEBHOOK_SECRET`, `SUPPLIER_CALLBACK_SECRET` | 랜덤 | HMAC 서명 키 |
 
-### 4.6 서버의 `.env` (저장소에 넣지 않음)
-```bash
-# EC2의 ~/roampass/.env  — 이 파일은 서버에만 존재
-SITE_DOMAIN=3-35-12-34.sslip.io              # EC2 퍼블릭 IP의 점(.)을 하이픈(-)으로
-APP_PUBLIC_BASE_URL=https://3-35-12-34.sslip.io
-SPRING_DATASOURCE_URL=jdbc:postgresql://<RDS 엔드포인트>:5432/roampass
-SPRING_DATASOURCE_USERNAME=roampass
-SPRING_DATASOURCE_PASSWORD=<비밀번호>
-SUPPLIER_HMAC_SECRET=<openssl rand -hex 32 결과>
-PG_HMAC_SECRET=<openssl rand -hex 32 결과>
-JAVA_TOOL_OPTIONS=-Xmx384m -XX:MaxMetaspaceSize=128m
-```
-- 저장소에는 같은 키 이름에 값만 비운 **`.env.example`**을 커밋한다
-- `chmod 600 .env`로 다른 사용자가 읽지 못하게 한다
+> DB 비밀번호는 **처음 띄울 때** 볼륨에 저장된다. 나중에 `.env`만 바꾸면 접속이 안 된다(볼륨을 지우거나 DB에서 비밀번호를 바꿔야 함)
 
-### 4.7 Caddy 설정 (HTTPS 자동)
+### 4.6 Caddy 설정 (HTTPS 자동)
+`deploy/Caddyfile`을 그대로 쓴다.
 ```
-# Caddyfile
 {$SITE_DOMAIN} {
-    handle /api/*  { reverse_proxy backend:8080 }
-    handle /mock/* { reverse_proxy backend:8080 }
-    handle         { reverse_proxy frontend:3000 }
+	handle /api/*  { reverse_proxy backend:8080 }
+	handle /mock/* { reverse_proxy backend:8080 }
+	handle         { reverse_proxy frontend:3000 }
 }
 ```
 - **sslip.io**: `3-35-12-34.sslip.io` 같은 이름을 IP `3.35.12.34`로 연결해 주는 무료 DNS다. 도메인을 사지 않아도 Caddy가 Let's Encrypt 인증서를 자동으로 받는다
 - 인증서 발급에는 **80, 443 포트가 열려 있어야** 한다
 
-### 4.8 docker-compose.prod.yml (개념)
-```yaml
-services:
-  caddy:
-    image: caddy:2
-    ports: ["80:80", "443:443"]
-    volumes: ["./Caddyfile:/etc/caddy/Caddyfile", "caddy_data:/data"]
-    env_file: .env
-    restart: unless-stopped
-  backend:
-    image: ghcr.io/<내계정>/roampass-backend:latest
-    env_file: .env
-    restart: unless-stopped          # 서버 재부팅·장애 시 자동 재시작 → 스케줄러 복구
-  frontend:
-    image: ghcr.io/<내계정>/roampass-frontend:latest
-    environment:
-      API_INTERNAL_URL: http://backend:8080
-    restart: unless-stopped
-volumes:
-  caddy_data:                        # 인증서 보관 (재시작해도 재발급 안 하도록)
-```
+### 4.7 docker-compose.prod.yml
+저장소의 `docker-compose.prod.yml`을 그대로 쓴다. 핵심만 보면 이렇다.
+| 서비스 | 이미지 | 메모 |
+|---|---|---|
+| postgres | `postgres:16-alpine` | `shared_buffers=64MB`, `max_connections=30`, 볼륨 `pgdata` |
+| backend | `ghcr.io/yebook99/roampass-backend:${IMAGE_TAG:-latest}` | `JAVA_TOOL_OPTIONS=-Xmx384m`, postgres가 healthy가 된 뒤 시작 |
+| frontend | `ghcr.io/yebook99/roampass-frontend:${IMAGE_TAG:-latest}` | backend가 healthy가 된 뒤 시작 |
+| caddy | `caddy:2.8.4-alpine` | 80/443만 밖으로, 인증서는 볼륨 `caddy_data` |
 
-### 4.9 기동과 확인
+모두 `restart: unless-stopped`라 서버가 재부팅되면 다시 뜨고, 스케줄러가 DB에 남은 일(PAID, ISSUING 등)을 이어서 한다.
+
+### 4.8 기동과 확인
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+cd ~/roampass
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d --wait
 docker compose -f docker-compose.prod.yml logs -f backend   # Flyway 마이그레이션, 시작 로그 확인
 
 curl -s https://<SITE_DOMAIN>/api/plans | head          # 요금제 시드가 나오면 DB 연결 OK
-curl -s https://<SITE_DOMAIN>/actuator/health           # (노출했다면) UP
+free -h; docker stats --no-stream                         # 메모리 확인
 ```
-**콜백이 실제로 돌아오는지 확인**(2.6 필수): 화면에서 이심을 하나 결제한 뒤, 어드민 주문 상세 타임라인에 "공급사 콜백 수신 · 서명 OK"가 찍히는지 본다. 로그에서는 `POST /api/webhooks/supplier`를 확인한다.
+**콜백이 실제로 돌아오는지 확인**(2.6 필수): 화면에서 이심을 하나 결제한 뒤, 어드민 주문 상세 타임라인에 `주문 ISSUING → ISSUED · SUPPLIER · CALLBACK`이 찍히는지 본다. 로그에서는 `POST /api/webhooks/supplier`를 확인한다.
 
-### 4.10 시크릿 창에서 최종 확인 (부록 B)
+**백업이 필요하면** (RDS 자동 백업이 없으므로):
+```bash
+docker compose -f docker-compose.prod.yml exec postgres pg_dump -U roampass roampass > backup.sql
+```
+
+### 4.9 시크릿 창에서 최종 확인 (부록 B)
 - 다른 기기나 시크릿 창에서 사용자 화면(`/`)과 어드민(`/admin`)을 열어 본다
 - README에 URL을 적는다
 
@@ -198,7 +172,7 @@ curl -s https://<SITE_DOMAIN>/actuator/health           # (노출했다면) UP
 | 증상 | 확인할 것 |
 |---|---|
 | SSH 접속 안 됨 | 보안 그룹 22번의 "내 IP"가 바뀌었는지(카페·집 이동), 키 파일 권한 `chmod 400` |
-| Spring이 DB 연결 타임아웃 | RDS 보안 그룹 출처가 **EC2 보안 그룹**인지, 엔드포인트 오타, RDS가 "사용 가능" 상태인지 |
+| Spring이 DB에 연결 못 함 | `docker compose ... ps`에서 postgres가 healthy인지, `.env`의 `POSTGRES_PASSWORD`를 처음 띄운 뒤 바꾸지 않았는지(§4.5) |
 | `exec format error` | Mac(ARM)에서 빌드한 이미지 → `--platform linux/amd64`로 다시 빌드 |
 | 컨테이너가 계속 재시작 / `Killed` | 메모리 부족 → swap 확인(`free -h`), `-Xmx` 낮추기 |
 | HTTPS 인증서 발급 실패 | 80/443 인바운드, `SITE_DOMAIN`이 현재 IP와 일치하는지 |
@@ -223,19 +197,19 @@ GitHub Actions 흐름은 이렇다.
 ## 9. 정리 (과금 방지)
 
 1. EC2 인스턴스 **종료(terminate)**. 중지가 아니라 종료해야 디스크(EBS)도 함께 삭제된다(설정 확인)
-2. RDS 삭제. 최종 스냅샷이 필요 없으면 "생성 안 함"을 고른다(스냅샷도 저장 비용이 있음)
-3. Elastic IP를 만들었다면 **릴리스**
-4. 보안 그룹과 키 페어 삭제
-5. 다음 날 Billing → Bills에서 0원인지 확인
+2. Elastic IP를 만들었다면 **릴리스**
+3. 보안 그룹과 키 페어 삭제
+4. 다음 날 Billing → Bills에서 0원인지 확인
 
 ## 10. 면접에서 말하는 법
 
-> "AWS 프리티어로 EC2 한 대에 docker compose로 프론트, 백엔드, Caddy를 올리고 DB는 RDS를 썼습니다. Render 같은 무료 PaaS는 15분 동안 요청이 없으면 서버가 잠드는데, 제 설계는 스케줄러가 결제 후 발급 안 된 주문을 끝내는 구조라 잠들지 않는 서버가 필요했습니다.
-> RDS는 퍼블릭 접근을 끄고 EC2 보안 그룹에서만 접속하게 했고, HTTPS는 도메인을 사지 않으려고 sslip.io와 Caddy로 해결했습니다. 콜백 주소는 환경변수로 공개 주소를 받아서 모의 공급사가 실제 인터넷 경로로 콜백하도록 했습니다.
+> "AWS 프리티어로 EC2 한 대에 docker compose로 Caddy, 프론트, 백엔드, PostgreSQL을 함께 올렸습니다. 로컬과 같은 구성이라 로컬에서 확인한 것이 서버에서도 그대로 동작합니다. Render 같은 무료 PaaS는 15분 동안 요청이 없으면 서버가 잠드는데, 제 설계는 스케줄러가 결제 후 발급 안 된 주문을 끝내는 구조라 잠들지 않는 서버가 필요했습니다.
+> 밖으로는 Caddy의 80·443만 열고 DB·백엔드 포트는 열지 않았습니다. RDS를 안 쓴 대신 자동 백업이 없다는 한계가 있어서 필요하면 pg_dump로 백업합니다. HTTPS는 도메인을 사지 않으려고 sslip.io와 Caddy로 해결했습니다. 콜백 주소는 환경변수로 공개 주소를 받아서 모의 공급사가 실제 인터넷 경로로 콜백하도록 했습니다.
 > 막혔던 건 ✍️ ______였습니다."
 
 ### 스스로 점검
-- [ ] RDS 보안 그룹의 출처를 IP가 아니라 EC2 보안 그룹으로 지정한 이유를 말할 수 있다
+- [ ] RDS 대신 DB를 컨테이너로 둔 이유와 그 대가(백업·디스크)를 말할 수 있다
+- [ ] 3000·8080·5432를 밖으로 열지 않아도 동작하는 이유(compose 내부망, Caddy)를 말할 수 있다
 - [ ] EC2에서 이미지를 빌드하지 않은 이유를 말할 수 있다
 - [ ] 콜백 주소를 어떻게 정했고 배포 환경에서 콜백이 오는지 어떻게 확인했는지 말할 수 있다
 - [ ] 서버가 재시작되면 스케줄러 작업이 어떻게 복구되는지 말할 수 있다

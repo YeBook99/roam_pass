@@ -69,10 +69,12 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
           chmod 600 ~/.ssh/ec2.pem
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+      # git pull: docker-compose.prod.yml·Caddyfile이 바뀌었을 수 있다. 이미지는 방금 올린 커밋 태그(IMAGE_TAG)를 받는다
       - name: 새 이미지로 교체
         run: |
           ssh -i ~/.ssh/ec2.pem "ec2-user@${{ secrets.EC2_HOST }}" \
-            "cd ~/roampass && export IMAGE_TAG=${{ github.sha }} \
+            "cd ~/roampass && git pull --ff-only \
+             && export IMAGE_TAG=${{ github.sha }} \
              && docker compose -f docker-compose.prod.yml pull \
              && docker compose -f docker-compose.prod.yml up -d \
              && docker image prune -f"
