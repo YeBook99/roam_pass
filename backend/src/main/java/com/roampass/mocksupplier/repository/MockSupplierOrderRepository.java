@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface MockSupplierOrderRepository extends JpaRepository<MockSupplierOrder, Long> {
 
     Optional<MockSupplierOrder> findByOrderNo(String orderNo);
+
+    Optional<MockSupplierOrder> findByIccid(String iccid);
 }

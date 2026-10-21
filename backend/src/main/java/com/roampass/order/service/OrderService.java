@@ -81,6 +81,12 @@ public class OrderService {
         return getOrder(orderId).getStatus();
     }
 
+    // 설치 추적용: 이 주문의 요금제 사용 일수 (만료일 계산에 쓴다)
+    @Transactional(readOnly = true)
+    public int getPlanDays(Long orderId) {
+        return planService.getPlan(getOrder(orderId).getPlanId()).days();
+    }
+
     // 결제 확정: PENDING→PAID. 이미 PENDING이 아니면(만료 등) false
     // 성공하면 OrderPaidEvent를 발행한다. 발급 기능이 이 트랜잭션이 커밋된 뒤에 받아서 발급을 시작한다
     @Transactional

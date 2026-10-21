@@ -13,6 +13,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
         "external.supplier.base-url=http://localhost:1",   // 모의 공급사도 마찬가지
         "app.payment.reconcile-delay-ms=3600000",   // 테스트 중에 대사 스케줄러가 끼어들지 않게
         "app.issue.scheduler-delay-ms=3600000",     // 발급 안전망 스케줄러도 마찬가지
+        "app.install.poll-delay-ms=3600000",        // 설치 상태 확인 스케줄러도 마찬가지
 })
 public abstract class IntegrationTestSupport {
 

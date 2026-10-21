@@ -2,7 +2,11 @@ package com.roampass.mocksupplier.controller;
 
 import com.roampass.mocksupplier.dto.MockSupplierOrderRequest;
 import com.roampass.mocksupplier.dto.MockSupplierOrderResponse;
+import com.roampass.mocksupplier.dto.MockSupplierProfileResponse;
+import com.roampass.mocksupplier.dto.MockSupplierStateRequest;
 import com.roampass.mocksupplier.service.MockSupplierService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
@@ -24,5 +28,18 @@ public class MockSupplierController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public MockSupplierOrderResponse createOrder(@RequestBody MockSupplierOrderRequest request) {
         return mockSupplierService.createOrder(request);
+    }
+
+    // 프로필 상태 조회 (우리 서버가 설치·개통 여부를 물어보는 곳)
+    @GetMapping("/mock/supplier/profiles/{iccid}")
+    public MockSupplierProfileResponse getProfile(@PathVariable String iccid) {
+        return mockSupplierService.getProfile(iccid);
+    }
+
+    // 시연용: 실제 폰 대신 공급사 상태를 바꿔 설치·개통을 흉내 낸다 (과제 2.2 허용)
+    @PostMapping("/mock/supplier/profiles/{iccid}/state")
+    public MockSupplierProfileResponse changeState(@PathVariable String iccid,
+                                                   @RequestBody MockSupplierStateRequest request) {
+        return mockSupplierService.changeState(iccid, request);
     }
 }
