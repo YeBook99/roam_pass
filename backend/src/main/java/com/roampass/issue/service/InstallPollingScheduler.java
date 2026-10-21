@@ -31,6 +31,10 @@ public class InstallPollingScheduler {
                 log.error("설치 상태 확인 실패, 다음 주기에 다시 시도 profileId={}", profile.getId(), e);
             }
         }
-        installTrackingService.expireDue();
+        try {
+            installTrackingService.expireDue();
+        } catch (RuntimeException e) {
+            log.error("만료 처리 실패, 다음 주기에 다시 시도", e);
+        }
     }
 }

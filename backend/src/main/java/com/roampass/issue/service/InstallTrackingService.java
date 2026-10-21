@@ -83,6 +83,9 @@ public class InstallTrackingService {
             }
         } else if ("ENABLED".equals(state.state()) && state.activatedAt() != null) {
             if (transit(profile, InstallStatus.ACTIVE, Actor.SUPPLIER, signal, "공급사 기준 개통됨", now)) {
+                if (profile.getInstalledAt() == null) {
+                    profileRepository.recordInstalledAt(profileId, now);   // 설치 확인 없이 바로 개통으로 건너뛴 경우
+                }
                 int days = orderService.getPlanDays(profile.getOrderId());
                 Instant expiresAt = ExpiryCalculator.expiresAt(state.activatedAt(), days);
                 profileRepository.recordActivation(profileId, state.activatedAt(), expiresAt, now);
