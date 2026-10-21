@@ -108,7 +108,7 @@
 - 상태를 하나로 합치지 않은 이유: 부분 취소, QR 열람→설치→개통이 각각 따로 움직여서 하나에 담으면 조합이 폭발한다
 - 클라이언트가 "발급해 줘"를 호출하는 구조를 **처음부터 택하지 않았다**
 
-**문서·코드 위치**: [04_상태설계](04_상태설계.md), `OrderStatus.canTransitTo()`, `OrderService.markPaid`, `StatusHistoryService`, `IssueRetryScheduler`(예정)
+**문서·코드 위치**: [04_상태설계](04_상태설계.md), `OrderStatus.canTransitTo()`, `OrderService.markPaid`, `StatusHistoryService`, `IssueService.onOrderPaid`, `IssueScheduler`(PAID 방치 안전망), 재시도 스케줄러(보완 단계)
 
 **예상 꼬리질문**
 - Q: 왜 바로 환불하지 않고 3번 재시도하나요? → A: "공급사 장애는 대부분 일시적이고, 사용자는 SIM을 원해서 결제했으니까요. 대신 약 6분 안에 결론을 내도록 상한을 뒀습니다."
