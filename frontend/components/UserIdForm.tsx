@@ -22,8 +22,7 @@ export function UserIdForm({ currentUserId }: { currentUserId?: string }) {
   return (
     <form onSubmit={handleSubmit} className="row">
       <label>
-        내 아이디{' '}
-        {/* 아이디는 HTTP 헤더(X-User-Id)로 가는데, 헤더에는 한글을 넣을 수 없어서 영문·숫자·_-만 받는다 */}
+        내 아이디 {/* 아이디는 HTTP 헤더(X-User-Id)로 가는데, 헤더에는 한글을 넣을 수 없어서 영문·숫자·_-만 받는다 */}
         <input
           value={userId}
           onChange={(e) => setUserId(e.target.value)}

@@ -36,7 +36,12 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     ['공급사 주문번호', order.supplierOrderNo ?? '-'],
     ['ICCID', order.iccid ?? '-'],
     ['설치 상태', order.installStatus ?? '-'],
-    ['QR 확인 / 설치 / 개통', <span key="i"><KstTime iso={order.qrViewedAt} /> / <KstTime iso={order.installedAt} /> / <KstTime iso={order.activatedAt} /></span>],
+    [
+      'QR 확인 / 설치 / 개통',
+      <span key="i">
+        <KstTime iso={order.qrViewedAt} /> / <KstTime iso={order.installedAt} /> / <KstTime iso={order.activatedAt} />
+      </span>,
+    ],
     ['만료 시각', <KstTime key="e" iso={order.expiresAt} />],
   ];
 
@@ -49,50 +54,54 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <RefreshControls />
       </div>
 
-      <table>
-        <tbody>
-          {rows.map(([label, value]) => (
-            <tr key={label}>
-              <th>{label}</th>
-              <td>{value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <section className="card">
+        <table>
+          <tbody>
+            {rows.map(([label, value]) => (
+              <tr key={label}>
+                <th>{label}</th>
+                <td>{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
       <h2>타임라인</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>언제 (KST)</th>
-            <th>무엇이</th>
-            <th>누가 / 어떤 신호로</th>
-            <th>사유</th>
-          </tr>
-        </thead>
-        <tbody>
-          {timeline.map((item, index) => (
-            <tr key={index}>
-              <td>
-                {isLate(item) ? (
-                  <>
-                    발생 <KstTime iso={item.occurredAt} seconds /> / 기록 <KstTime iso={item.recordedAt} seconds />
-                  </>
-                ) : (
-                  <KstTime iso={item.recordedAt} seconds />
-                )}
-              </td>
-              <td>
-                {TIMELINE_TARGET_LABEL[item.target]} {item.fromStatus ?? '(생성)'} → {item.toStatus}
-              </td>
-              <td>
-                {item.actor} · {item.signal}
-              </td>
-              <td>{item.reason ?? ''}</td>
+      <section className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>언제 (KST)</th>
+              <th>무엇이</th>
+              <th>누가 / 어떤 신호로</th>
+              <th>사유</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {timeline.map((item, index) => (
+              <tr key={index}>
+                <td>
+                  {isLate(item) ? (
+                    <>
+                      발생 <KstTime iso={item.occurredAt} seconds /> / 기록 <KstTime iso={item.recordedAt} seconds />
+                    </>
+                  ) : (
+                    <KstTime iso={item.recordedAt} seconds />
+                  )}
+                </td>
+                <td>
+                  {TIMELINE_TARGET_LABEL[item.target]} {item.fromStatus ?? '(생성)'} → {item.toStatus}
+                </td>
+                <td>
+                  {item.actor} · {item.signal}
+                </td>
+                <td>{item.reason ?? ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }

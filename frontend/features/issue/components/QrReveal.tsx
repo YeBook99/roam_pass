@@ -26,7 +26,7 @@ export function QrReveal({ orderNo }: { orderNo: string }) {
   }
   return (
     <div className="stack">
-      <button type="button" disabled={view.isPending} onClick={() => view.mutate()}>
+      <button type="button" className="btn-primary" disabled={view.isPending} onClick={() => view.mutate()}>
         {view.isPending ? '불러오는 중...' : '설치 코드 보기'}
       </button>
       {view.isError && <p className="error">{view.error.message}</p>}

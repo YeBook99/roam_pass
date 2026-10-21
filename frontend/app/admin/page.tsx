@@ -66,38 +66,40 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <span>총 {result.totalElements}건</span>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>주문번호</th>
-            <th>사용자</th>
-            <th>종류</th>
-            <th>금액</th>
-            <th>주문 상태</th>
-            <th>결제 상태</th>
-            <th>설치 상태</th>
-            <th>주문 시각(KST)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {result.content.map((order) => (
-            <tr key={order.orderNo}>
-              <td>
-                <Link href={`/admin/orders/${order.orderNo}`}>{order.orderNo}</Link>
-              </td>
-              <td>{order.userId}</td>
-              <td>{order.simType}</td>
-              <td>{order.amount.toLocaleString('ko-KR')}원</td>
-              <td>{order.orderStatus}</td>
-              <td>{order.payStatus ?? '-'}</td>
-              <td>{order.installStatus ?? '-'}</td>
-              <td>
-                <KstTime iso={order.createdAt} />
-              </td>
+      <section className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>주문번호</th>
+              <th>사용자</th>
+              <th>종류</th>
+              <th>금액</th>
+              <th>주문 상태</th>
+              <th>결제 상태</th>
+              <th>설치 상태</th>
+              <th>주문 시각(KST)</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {result.content.map((order) => (
+              <tr key={order.orderNo}>
+                <td>
+                  <Link href={`/admin/orders/${order.orderNo}`}>{order.orderNo}</Link>
+                </td>
+                <td>{order.userId}</td>
+                <td>{order.simType}</td>
+                <td>{order.amount.toLocaleString('ko-KR')}원</td>
+                <td>{order.orderStatus}</td>
+                <td>{order.payStatus ?? '-'}</td>
+                <td>{order.installStatus ?? '-'}</td>
+                <td>
+                  <KstTime iso={order.createdAt} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
       {result.content.length === 0 && page > lastPage && <Link href={pageHref(0)}>없는 페이지입니다. 첫 페이지로</Link>}
       {result.content.length === 0 && page <= lastPage && <p>조건에 맞는 주문이 없습니다.</p>}
 

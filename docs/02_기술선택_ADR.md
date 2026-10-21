@@ -272,6 +272,7 @@
   - **데이터**: fetch는 `lib/api-server.ts`·`lib/api-client.ts`로만, 전부 `cache: 'no-store'`. 에러는 백엔드 ProblemDetail을 `ApiError(code, detail)`로 바꾼다. 폴링·버튼은 TanStack Query(ADR-02)
   - **시각**: UTC 문자열을 받고 표시할 때만 `formatKst`(시간대 고정)
   - **쓰지 않는 것**: Tailwind·UI 라이브러리, Server Actions, Route Handlers, middleware, 전역 상태 라이브러리
+  - **글꼴**: `next/font/google`(Next 기본 기능)로 Inter만 쓴다. 빌드할 때 글꼴 파일을 받아 우리 서버가 직접 주므로 화면이 Google에 요청하지 않고, 라이브러리도 늘지 않는다. 대신 빌드 환경(CI, Docker 빌드)에서 Google Fonts에 접속할 수 있어야 한다. 한글은 Inter에 없어서 시스템 한글 글꼴로 보인다
 - **이번에 추가한 라이브러리**
 
   | 라이브러리 | 왜 | 버린 대안 |

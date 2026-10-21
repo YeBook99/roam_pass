@@ -21,22 +21,24 @@ export default async function MySimDetailPage({ params }: { params: Promise<{ or
   return (
     <div className="stack">
       <h1>내 SIM</h1>
-      <p>
-        주문번호 {order.orderNo} · {ORDER_STATUS_LABEL[order.status]} · {order.amount.toLocaleString('ko-KR')}원
-      </p>
-      <p>
-        결제 시각 <KstTime iso={order.paidAt} />
-      </p>
+      <section className="card stack">
+        <p>
+          주문번호 {order.orderNo} · {ORDER_STATUS_LABEL[order.status]} · {order.amount.toLocaleString('ko-KR')}원
+        </p>
+        <p className="muted">
+          결제 시각 <KstTime iso={order.paidAt} />
+        </p>
+      </section>
 
       {profile === null ? (
-        <section className="stack">
+        <section className="card stack">
           <p>아직 SIM이 발급되지 않았습니다.</p>
           {(order.status === 'PAID' || order.status === 'ISSUING') && (
             <Link href={`/orders/${order.orderNo}/waiting`}>발급 진행 상황 보기</Link>
           )}
         </section>
       ) : (
-        <section className="stack">
+        <section className="card stack">
           <p>
             설치 상태: <strong>{INSTALL_STATUS_LABEL[profile.installStatus]}</strong>
           </p>

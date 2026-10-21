@@ -13,10 +13,10 @@ export default async function WaitingPage({ params }: { params: Promise<{ orderN
   return (
     <div className="stack">
       <h1>발급 대기</h1>
-      <p>주문번호 {order.orderNo}</p>
+      <p className="muted">주문번호 {order.orderNo}</p>
       <IssueStatusPoller initial={order} />
       {/* 기다리는 동안 미리 읽어 둘 설치 방법 (docs/08 §4). 바뀌지 않는 글이라 서버에서 그린다 */}
-      <section>
+      <section className="card stack">
         <h2>이심 설치 방법</h2>
         <ul>
           <li>아이폰: 설정 → 셀룰러 → eSIM 추가 → QR 코드 사용 → 세부사항 직접 입력</li>

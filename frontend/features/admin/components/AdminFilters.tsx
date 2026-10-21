@@ -48,7 +48,7 @@ export function AdminFilters({ current }: { current: Filters }) {
   }
 
   return (
-    <form onSubmit={search} className="row">
+    <form onSubmit={search} className="card row">
       {SELECTS.map(({ key, label }) => (
         <label key={key}>
           {label}{' '}
@@ -64,13 +64,14 @@ export function AdminFilters({ current }: { current: Filters }) {
       ))}
       {/* 기간은 한국 날짜로 고른다. UTC 범위로 바꾸는 것은 백엔드가 한다 */}
       <label>
-        주문일(KST){' '}
-        <input type="date" value={filters.from ?? ''} onChange={(e) => change('from', e.target.value)} />
+        주문일(KST) <input type="date" value={filters.from ?? ''} onChange={(e) => change('from', e.target.value)} />
       </label>
       <label>
         ~ <input type="date" value={filters.to ?? ''} onChange={(e) => change('to', e.target.value)} />
       </label>
-      <button type="submit">조회</button>
+      <button type="submit" className="btn-primary">
+        조회
+      </button>
       <button type="button" onClick={() => router.push('/admin')}>
         초기화
       </button>
