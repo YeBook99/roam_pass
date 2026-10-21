@@ -29,22 +29,20 @@ fix/...           ●───●
 | `.githooks/pre-commit` | main/develop 직접 커밋, 규칙에 맞지 않는 브랜치 이름 |
 | `.githooks/commit-msg` | 템플릿([왜][무엇][검증][관련])을 지키지 않은 커밋 |
 | Claude hook `guard-bash` | Claude의 main/develop push, force push, squash, `--no-verify` |
-| GitHub branch protection (§4) | PR 없는 머지, CI 미통과 머지, force push |
+| GitHub branch protection (§4) | PR 없는 머지, force push |
 
 ## 2. CI/CD 전체 흐름
 
 | 워크플로 | 언제 | 하는 일 |
 |---|---|---|
-| `pr-guide.yml` | PR 열림·새 커밋 push (자동) | `manual-ci` 상태를 **pending**으로 표시하고 수동 실행 방법을 안내한다. 테스트는 돌리지 않는다 |
-| `ci.yml` | **사용자가 웹 UI에서 수동 실행** / develop·main push | 규칙 검사 → 백엔드 테스트 → 프론트 빌드 → `manual-ci` 상태와 PR 코멘트로 결과 보고 |
+| `ci.yml` | **PR이 develop·main에 머지된 뒤(push)에만** | 규칙 검사 → 백엔드 테스트 → 프론트 빌드 |
 | `cd.yml` | main push (릴리스 PR 머지) | 이미지 빌드 → GHCR push → (승인 후) EC2 배포 → 헬스 체크 |
 
 ### CI job 구성
 ```
-harness (브랜치 이름 · 커밋 템플릿 · 시크릿 검사 · 구성요소 감지)
+harness (커밋 템플릿 · 시크릿 검사 · 구성요소 감지)
    ├─▶ backend  (./gradlew test — Testcontainers로 진짜 PostgreSQL)
    └─▶ frontend (npm ci · lint · build — 서버/클라이언트 경계 오류 검출)
-report (manual-ci 커밋 상태 + PR 코멘트)
 ```
 - **아직 코드가 없어도 실패하지 않는다.** `detect-parts.sh`가 `backend/build.gradle`, `frontend/package.json`이 있는지 보고, 없는 부분의 job은 건너뛴다. 코드가 추가되는 순간 자동으로 그 job이 켜진다
 
@@ -52,10 +50,11 @@ report (manual-ci 커밋 상태 + PR 코멘트)
 - **PR #1은 CI를 돌리지 못하고 머지했다.** `workflow_dispatch` 워크플로는 기본 브랜치에 파일이 있어야 실행할 수 있는데, `ci.yml`을 처음 들여오는 PR이라 어디에도 파일이 없었다(실행 요청이 404). 그래서 로컬 검사(시크릿 스캔, 브랜치명, 셸 문법)만 확인하고 머지했다. 다음 PR부터는 정상적으로 수동 실행한다
 - **템플릿 규칙보다 먼저 만든 커밋 6개(`197f99a`~`d68642a`)는 커밋 메시지 검사에서 뺐다.** PR #1 머지 후 develop push CI에서 이 커밋들 때문에 검사가 실패했다. 이미 합쳐진 커밋이라 고치려면 force push가 필요한데, 그건 이력을 지우는 일이라 하지 않았다. 대신 `scripts/ci/lint-commits.sh`의 `LEGACY_BASELINE`에 마지막 커밋을 적고, 그 커밋과 조상은 검사하지 않는다. 그 뒤 커밋은 모두 검사한다
 
-### 왜 PR CI를 수동 실행으로 했나
-- 요구사항이다
-- 장점: 작업 중에 push할 때마다 CI가 도는 낭비가 없다(private 저장소는 Actions 무료 시간에 한도가 있음). 준비가 됐을 때 한 번 돌린다
-- 위험: 실행을 잊고 머지하는 것 → **`manual-ci` 상태를 필수 체크로 걸어서** 막는다. 새 커밋을 push하면 다시 pending이 되므로 **최신 커밋 기준으로** 통과해야 머지할 수 있다
+### 왜 CI를 머지 후에만 돌리나
+- 사용자 결정이다(2026-10-21). 처음에는 "PR마다 수동 실행 + `manual-ci` 필수 체크"였는데, 혼자 하는 과제에서 PR마다 실행·확인하는 절차가 번거로워 바꿨다
+- 장점: 작업 브랜치에 push할 때나 PR을 올릴 때 CI가 돌지 않아 Actions 무료 시간을 아낀다. 절차가 단순하다
+- 위험: **CI를 통과하지 못한 코드가 develop에 들어갈 수 있다.** 그래서 PR 전에 로컬에서 같은 검사를 한다(`./gradlew test`, `git add` 후 시크릿 스캔, invariant-reviewer). 머지 후 CI가 실패하면 develop에서 바로 고치는 PR을 올린다
+- 브랜치 이름 검사는 CI에서 뺐다. 로컬 `pre-commit` 훅이 커밋할 때 검사한다
 
 ## 3. 러너 — GitLab 러너와의 대응
 
@@ -92,19 +91,16 @@ git push -u origin <작업 브랜치>
 
 ### 4.2 Settings → General
 - [ ] **Default branch → `develop`**
-  - ⚠️ **중요**: "Run workflow" 버튼은 **기본 브랜치에 있는 워크플로만** 보여 준다. 기본 브랜치가 main이고 ci.yml이 아직 develop에만 있으면 버튼이 안 보인다
 - [ ] Pull Requests: **Allow merge commits만 체크**, Squash merging·Rebase merging 해제 (작업 흐름 보존)
 - [ ] Automatically delete head branches 체크
 
 ### 4.3 Settings → Branches (또는 Rules → Rulesets) — `develop`, `main` 각각
 - [ ] Require a pull request before merging (혼자라면 승인 수 0)
-- [ ] **Require status checks to pass → `manual-ci` 추가**
-  - 체크 이름은 최근 1주일 안에 한 번 이상 보고된 것만 검색된다 → **먼저 CI를 한 번 수동 실행**한 뒤 추가한다
 - [ ] Block force pushes / Restrict deletions
 
 ### 4.4 Settings → Actions → General
 - [ ] Actions permissions: Allow all actions(또는 GitHub·verified 작성자만)
-- 워크플로 파일에 필요한 권한(`statuses: write`, `pull-requests: write`, `packages: write`)을 직접 선언했으므로 기본 토큰 권한은 read-only여도 된다
+- 워크플로 파일에 필요한 권한(CI는 `contents: read`, CD는 `packages: write`)을 직접 선언했으므로 기본 토큰 권한은 read-only여도 된다
 
 ### 4.5 Settings → Secrets and variables → Actions (배포할 때)
 | 종류 | 이름 | 값 |
@@ -122,14 +118,12 @@ git push -u origin <작업 브랜치>
 - `docker-compose.prod.yml`의 이미지 태그를 `${IMAGE_TAG:-latest}`로 둔다. CD가 커밋 SHA 태그로 배포하므로 어떤 버전이 떠 있는지 알 수 있고 롤백도 쉽다
 - EC2에서 GHCR 이미지를 pull하려면 `docker login ghcr.io`(read:packages 토큰)를 한 번 해 둔다. 또는 패키지를 public으로 둔다
 
-## 5. 수동 실행 방법 (매 PR마다)
+## 5. PR과 CI 순서 (매 PR마다)
 
-1. PR을 올리면 봇 코멘트와 `manual-ci: pending`이 뜬다
-2. Actions → **CI** → **Run workflow**
-   - Use workflow from: **PR 브랜치**
-   - base_branch: `develop` (릴리스 PR이면 `main`)
-3. 끝나면 PR에 결과 표 코멘트가 달리고 `manual-ci`가 ✅/❌로 바뀐다
-4. CLI: `gh workflow run ci.yml --ref <브랜치> -f base_branch=develop`
+1. PR 전 로컬 점검: `./gradlew test`, `git add` 후 `node scripts/ci/secret-scan.mjs`, invariant-reviewer
+2. PR을 올리고 Merge commit으로 머지한다
+3. 머지로 develop에 push되면 CI가 자동으로 돈다. Actions → **CI**에서 결과를 확인한다
+4. 실패하면 develop에서 `fix/...` 브랜치를 만들어 고치는 PR을 바로 올린다
 
 ## 6. 하네스 구성 (참고용 목록)
 

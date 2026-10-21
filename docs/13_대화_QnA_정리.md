@@ -17,7 +17,7 @@
 | 5 | 문서 수준 | 1년차, **Next.js 처음** 기준. 처음 나오는 용어는 학습 가이드로 설명 | `docs/learn/` |
 | 6 | 언어 | 모든 대화·문서는 한국어 | — |
 | 7 | 브랜치 | `main` ← `develop` ← `<type>/<scope>-<설명>`. 기능마다 브랜치, develop으로 PR | `docs/12`, `/branch-pr` |
-| 8 | CI/CD | **GitHub Actions**. PR CI는 **수동 실행만**, 러너는 기본 러너 + 변수로 self-hosted 전환 | `docs/12` |
+| 8 | CI/CD | **GitHub Actions**. PR CI는 **수동 실행만**(이후 2026-10-21 "머지 후에만 실행"으로 변경), 러너는 기본 러너 + 변수로 self-hosted 전환 | `docs/12` |
 | 9 | UI PR | Playwright MCP(headless)로 before/after 캡처 필수 | `/ui-screenshot` |
 | 10 | 에이전트 | 구현은 메인 에이전트 하나. 서브에이전트는 **읽기 전용 리뷰어 1개**만. 모의 면접은 스킬로 | CLAUDE.md §5, `docs/12` §7 |
 

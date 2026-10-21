@@ -10,7 +10,7 @@
 - [ ] `docs/INTERVIEW_GUIDE.md` 갱신
 
 ## 검증
-- [ ] **CI 수동 실행 완료** (Actions → CI → Run workflow → 이 브랜치 선택) — 결과 링크:
+- [ ] 로컬 점검: `./gradlew test` 통과, `git add` 후 시크릿 스캔 통과 (CI는 머지 후에 돈다)
 - [ ] 백엔드 테스트 (동시성 / 발급 실패 보상 / 만료 계산 관련 시 필수)
 - [ ] `docker compose up -d --build --wait` 기동 확인 (README 실행 방법이 깨지지 않았는지)
 

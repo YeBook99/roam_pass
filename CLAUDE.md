@@ -48,7 +48,7 @@
 3. 상태나 전이를 바꾸면 `/state-transition` 체크리스트를 따른다. 기술 결정이 생기면 `/adr`로 남긴다
 4. 커밋은 기능 단위로 나눈다 → `/commit`
 5. PR 전에 `invariant-reviewer` 서브에이전트로 diff를 검토한다
-6. PR은 develop 대상으로 올리고 **Merge commit**으로만 합친다(squash 금지). PR CI는 자동으로 돌지 않으므로 사용자에게 수동 실행(Actions → CI → Run workflow)을 안내한다
+6. PR은 develop 대상으로 올리고 **Merge commit**으로만 합친다(squash 금지). CI는 **머지 후(develop·main push)에만** 돈다. 그래서 PR 전에 로컬에서 테스트와 시크릿 스캔을 하고, 머지 후 CI 결과를 확인한다. 실패하면 바로 고치는 PR을 올린다
 
 ## 6. CI 워크플로를 수정할 때 (`docs/12_브랜치_CICD_전략.md`)
 
