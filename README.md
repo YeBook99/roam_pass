@@ -18,6 +18,11 @@ docker compose up -d --build --wait
 
 정리: `docker compose down -v`
 
+## 배포 (준비 중)
+
+AWS EC2 한 대에 `docker-compose.prod.yml`로 Caddy(HTTPS), 화면, 서버, PostgreSQL을 함께 띄웁니다. DB도 컨테이너이고 RDS는 쓰지 않습니다(ADR-12).
+설정 파일은 준비했고 로컬에서 같은 구성으로 확인했습니다. **아직 EC2에 올리지 않았습니다.** 절차는 [L5 배포 가이드](docs/learn/L5_AWS_프리티어_배포.md)에 있습니다.
+
 ## 현재 한계 (작업 중, 보완 예정)
 
 - **발급 재요청이 없습니다.** 공급사 발급 요청이 실패하거나 콜백이 오지 않으면 주문이 `ISSUING`에 남습니다. 재요청(최대 3회) → `ISSUE_FAILED` → 자동 환불은 다음 보완 단계에서 만듭니다
