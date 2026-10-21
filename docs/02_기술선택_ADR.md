@@ -24,6 +24,7 @@
 | 13 | 서명 | **HMAC-SHA256 (JDK `javax.crypto`)** | 과제 명세, 외부 라이브러리 불필요 |
 | 14 | PR 화면 캡처 | **Playwright MCP** | 같은 조건으로 before/after 캡처. 필수 테스트는 백엔드에서 증명 |
 | 15 | 백엔드 구조 | **레이어드 아키텍처 (기능 우선 패키지 + 계층) + ArchUnit·Lombok·validation** | 모든 기능이 같은 모양, 규칙을 테스트로 강제 |
+| 16 | 어드민 조회 | **`NamedParameterJdbcTemplate` + 직접 쓴 SQL** (조회 전용) | 세 테이블 JOIN + 선택 조건을 SQL 그대로 보여 줌 |
 
 ---
 
@@ -81,7 +82,7 @@
   - 일반적인 저장과 조회는 **Spring Data JPA** 리포지토리로 처리한다
   - **상태를 바꾸는 쿼리는 전부** `@Modifying @Query(nativeQuery = true)`로 직접 쓴 **조건부 UPDATE**다. 반환값(영향 받은 행 수)으로 "내가 처리권을 가졌는지"를 판단한다(→ [L3 상태 선점](learn/L3_동시성_핵심개념.md#3-상태-선점))
   - 중복 이벤트 기록은 `INSERT ... ON CONFLICT (event_key) DO NOTHING`으로 한다
-  - 어드민 목록 필터는 조건이 많아서 `JpaSpecificationExecutor`(동적 조건)로 만든다
+  - ~~어드민 목록 필터는 `JpaSpecificationExecutor`로 만든다~~ → 여러 테이블을 묶는 어드민 조회는 ADR-16
 - **고려한 대안**
 
   | 대안 | 장점 | 버린 이유 |
@@ -231,3 +232,27 @@
   - 기능이 같은 패턴(조건부 UPDATE → 이력)을 각자 갖고 있어 코드가 조금 반복된다. 기능이 많아져 반복이 문제가 되면 공통 부분을 `history` 쪽으로 옮기는 것을 다시 검토한다
   - 기능 사이 호출(결제 → 주문)은 Service를 직접 부른다. 순환이 생길 상황이 오면 이벤트(§6.4)로 바꾼다
   - 모듈 경계가 패키지뿐이라 다른 사람이 규칙을 어기는 것은 `ArchitectureTest`가 막는 범위까지만 막힌다
+
+### ADR-16. 어드민 조회: NamedParameterJdbcTemplate + 직접 쓴 SQL
+
+- **상태**: 채택 (ADR-04의 "어드민 필터는 Specification" 부분을 대체)
+- **맥락**: 어드민 주문 목록은 주문(`sim_order`), 그 주문의 최신 결제(`payment`), 프로필(`sim_profile`)을 함께 보여 주고, 다섯 가지 조건(주문 상태·결제 상태·설치 상태·SIM 종류·기간)을 **값이 있을 때만** 건다. 주문 상세 타임라인은 `status_history`에서 주문·결제·프로필 이력을 한 번에 모은다. 세 테이블은 각각 다른 기능의 것이라 JPA 연관관계도 없다(다른 기능 Entity는 ID로만 참조, ARCHITECTURE.md §4-8)
+- **결정**
+  - `admin.repository.AdminOrderQueryRepository`(ARCHITECTURE.md의 `{Feature}QueryRepository` 이름 규칙)가 `NamedParameterJdbcTemplate`으로 SQL을 실행하고 결과를 바로 응답 DTO로 만든다
+  - 선택 조건은 `StringBuilder`로 `AND o.status = :orderStatus`처럼 이어 붙이고, 값은 항상 파라미터로 넘긴다
+  - **조회 전용**이다. 상태 변경은 지금처럼 각 기능 Service의 JPA 네이티브 조건부 UPDATE로만 한다(CLAUDE.md §3-2)
+- **고려한 대안**
+
+  | 대안 | 장점 | 버린 이유 |
+  |---|---|---|
+  | JPA `Specification` | ADR-04에서 처음 정한 방식, 타입 안전 | 엔티티 하나(`SimOrder`) 기준이라, 연관관계가 없는 결제·프로필 조건을 걸려면 서브쿼리 코드를 Criteria API로 써야 한다. 제가 읽어도 어떤 SQL이 나가는지 바로 안 보였다 |
+  | JPA `EntityManager.createNativeQuery` | JPA 하나로 통일 | 결과가 `Object[]`라 열을 번호로 꺼내야 하고, 시각 타입 변환을 열마다 신경 써야 한다 |
+  | QueryDSL | 타입 안전 동적 쿼리 | 코드 생성 설정이 필요하고 처음 쓰는 도구가 하나 더 는다(ADR-04와 같은 이유) |
+- **ADR-04와 어긋나는 점**: ADR-04에서 "JPA + JdbcTemplate 혼용"을 버렸던 이유는 *조건부 UPDATE는 JPA 네이티브 쿼리로도 되니 섞을 필요가 없다*였다. 이번엔 쓰기가 아니라 여러 테이블 읽기이고, JdbcTemplate은 `spring-boot-starter-data-jpa`에 이미 들어 있어 의존성이 늘지 않는다. 그래서 **쓰기는 JPA, 여러 테이블 읽기는 JdbcTemplate**으로 나눴다
+- **근거 (1년차 말투)**: "처음엔 Specification으로 하려 했는데, 결제·프로필 테이블은 주문과 연관관계가 없어서 조건 하나 걸 때마다 서브쿼리를 Criteria로 짜야 했습니다. 어떤 SQL이 나가는지 제가 설명을 못 할 것 같아서, 조회 전용 Repository 하나에서 SQL을 직접 쓰기로 했습니다. 조건은 값이 있을 때만 `AND`를 붙이고, 값은 꼭 파라미터로 넘겨서 SQL 인젝션을 막았습니다."
+- **처음 써 봄?**: ✍️ (`NamedParameterJdbcTemplate`, `LEFT JOIN LATERAL` 사용 경험 여부)
+- **한계와 바꿀 조건**
+  - SQL 문자열이라 컬럼 이름이 틀려도 컴파일 때 모르고 실행해야 안다. 그래서 SQL을 고치면 필터마다 직접 호출해 확인해야 한다
+  - offset 페이지네이션이라 데이터가 아주 많아지면 뒤 페이지가 느려진다. 그때는 `created_at, id` 기준 커서 방식으로 바꾼다
+  - 목록과 전체 개수를 쿼리 두 번으로 센다. 그 사이에 주문이 생기면 개수가 한 건 어긋날 수 있지만 운영 화면이라 허용했다
+
