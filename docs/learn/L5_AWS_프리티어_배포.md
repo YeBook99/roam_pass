@@ -90,8 +90,15 @@ sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 free -h
 
-# 저장소를 받는다 (compose 파일과 Caddyfile이 필요하다. CD도 이 폴더를 쓴다)
-git clone https://github.com/YeBook99/roam_pass.git ~/roampass
+# 앱 폴더. 저장소가 private이라 git clone은 하지 않는다
+mkdir -p ~/roampass/deploy
+```
+
+설정 파일 3개(`docker-compose.prod.yml`, `deploy/Caddyfile`, `deploy/prod.env.example`)는 **내 PC에서 scp로** 보낸다. 이후 배포부터는 CD가 같은 방식으로 배포하는 커밋의 파일을 보낸다.
+```bash
+# 내 PC의 저장소 루트에서 (main 브랜치)
+scp -i roampass-key.pem docker-compose.prod.yml ec2-user@<IP>:~/roampass/
+scp -i roampass-key.pem deploy/Caddyfile deploy/prod.env.example ec2-user@<IP>:~/roampass/deploy/
 ```
 
 ### 4.4 이미지는 EC2에서 빌드하지 않는다
@@ -148,6 +155,8 @@ docker compose -f docker-compose.prod.yml up -d --wait
 docker compose -f docker-compose.prod.yml logs -f backend   # Flyway 마이그레이션, 시작 로그 확인
 
 curl -s https://<SITE_DOMAIN>/api/plans | head          # 요금제 시드가 나오면 DB 연결 OK
+# backend는 모의 PG·공급사도 공개 주소(APP_PUBLIC_BASE_URL)로 부른다. 서버 안에서 자기 공개 주소로 나갔다 들어오는지 확인
+docker compose -f docker-compose.prod.yml exec backend curl -fsS https://<SITE_DOMAIN>/api/plans > /dev/null && echo "공개 주소 왕복 OK"
 free -h; docker stats --no-stream                         # 메모리 확인
 ```
 **콜백이 실제로 돌아오는지 확인**(2.6 필수): 화면에서 이심을 하나 결제한 뒤, 어드민 주문 상세 타임라인에 `주문 ISSUING → ISSUED · SUPPLIER · CALLBACK`이 찍히는지 본다. 로그에서는 `POST /api/webhooks/supplier`를 확인한다.
@@ -189,7 +198,7 @@ docker compose -f docker-compose.prod.yml exec postgres pg_dump -U roampass roam
 ## 8. (가산점) push하면 배포까지
 
 GitHub Actions 흐름은 이렇다.
-`test → docker buildx (linux/amd64) → GHCR push → SSH로 EC2 접속 → docker compose pull && up -d`
+`docker buildx (linux/amd64) → GHCR push → (승인) → 배포 커밋의 compose·Caddyfile을 scp로 EC2에 복사 → SSH로 docker compose pull && up -d --wait → https://SITE_DOMAIN/api/plans 헬스 체크` (`.github/workflows/cd.yml`)
 
 - SSH 키와 서버 주소는 **GitHub Secrets**에 넣는다
 - 빌드를 Actions에서 하므로 EC2 메모리 문제도 해결된다

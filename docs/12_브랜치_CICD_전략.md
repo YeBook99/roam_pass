@@ -36,7 +36,7 @@ fix/...           ●───●
 | 워크플로 | 언제 | 하는 일 |
 |---|---|---|
 | `ci.yml` | **PR이 develop·main에 머지된 뒤(push)에만** | 규칙 검사 → 백엔드 테스트 → 프론트 빌드 |
-| `cd.yml` | main push (릴리스 PR 머지) | 이미지 빌드 → GHCR push → (승인 후) EC2 배포 → 헬스 체크 |
+| `cd.yml` | main push (릴리스 PR 머지) | 이미지 빌드 → GHCR push → (승인 후) compose·Caddyfile scp 복사 → EC2에서 pull·up → 헬스 체크 |
 
 ### CI job 구성
 ```
@@ -116,7 +116,9 @@ git push -u origin <작업 브랜치>
 
 ### 4.7 EC2 쪽 (L5와 연결)
 - `docker-compose.prod.yml`의 이미지 태그를 `${IMAGE_TAG:-latest}`로 둔다. CD가 커밋 SHA 태그로 배포하므로 어떤 버전이 떠 있는지 알 수 있고 롤백도 쉽다
-- EC2에서 GHCR 이미지를 pull하려면 `docker login ghcr.io`(read:packages 토큰)를 한 번 해 둔다. 또는 패키지를 public으로 둔다
+- EC2에서 GHCR 이미지(`ghcr.io/yebook99/roampass-backend`, `-frontend`)를 pull하려면 `docker login ghcr.io`(read:packages 토큰)를 한 번 해 둔다. 또는 패키지를 public으로 둔다
+- 저장소가 private이라 EC2에는 git으로 받지 않는다. CD가 **배포하는 커밋의** `docker-compose.prod.yml`, `deploy/Caddyfile`, `deploy/prod.env.example`을 `~/roampass/`로 scp 복사한다 → 설정 파일과 이미지가 같은 커밋이다
+- 서버의 `~/roampass/.env`는 사람이 한 번 만들고 CD는 건드리지 않는다(L5 §4.5)
 
 ## 5. PR과 CI 순서 (매 PR마다)
 

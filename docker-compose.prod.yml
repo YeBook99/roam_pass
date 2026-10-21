@@ -49,6 +49,11 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
 
   # 바깥 요청을 받는 유일한 컨테이너. HTTPS 인증서를 자동으로 받고 /api·/mock은 Spring, 나머지는 Next로 보낸다
@@ -63,7 +68,8 @@ services:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data   # 받은 인증서. 재시작할 때마다 다시 받지 않게 보관
     depends_on:
-      - frontend
+      frontend:
+        condition: service_healthy   # 화면이 준비된 뒤에 받기 시작한다 (기동 직후 502 방지)
     restart: unless-stopped
 
 volumes:
