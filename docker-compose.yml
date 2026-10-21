@@ -21,6 +21,7 @@ services:
       DB_USERNAME: roampass
       DB_PASSWORD: ${POSTGRES_PASSWORD:?.env가 없습니다. cp .env.example .env 를 먼저 실행하세요}
       PG_WEBHOOK_SECRET: ${PG_WEBHOOK_SECRET:?.env에 PG_WEBHOOK_SECRET이 없습니다. cp .env.example .env 를 다시 실행하세요}
+      SUPPLIER_CALLBACK_SECRET: ${SUPPLIER_CALLBACK_SECRET:?.env에 SUPPLIER_CALLBACK_SECRET이 없습니다. cp .env.example .env 를 다시 실행하세요}
       MOCK_ENABLED: "true"        # 시연에 모의 PG가 필요하다
     ports:
       - "8080:8080"

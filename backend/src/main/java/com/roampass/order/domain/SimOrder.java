@@ -41,6 +41,7 @@ public class SimOrder extends BaseTimeEntity {
 
     private Instant expiresAt;
     private Instant paidAt;
+    private String supplierOrderNo;   // 공급사 접수번호. 발급 요청이 접수되면 채워진다
 
     public static SimOrder create(String orderNo, String userId, Long planId, SimType simType, int amount,
                                   LocalDate travelStartDate, Instant expiresAt) {

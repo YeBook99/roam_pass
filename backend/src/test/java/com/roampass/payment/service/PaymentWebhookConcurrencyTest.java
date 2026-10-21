@@ -96,7 +96,8 @@ class PaymentWebhookConcurrencyTest extends IntegrationTestSupport {
 
         assertThat(results).containsEntry(PaymentConfirmResult.PROCESSED, 1).containsEntry(PaymentConfirmResult.DUPLICATE, 20);
         assertThat(approvedPayments).isEqualTo(1);
-        assertThat(orderStatus).isEqualTo("PAID");
+        // 결제 확정 직후 발급 이벤트가 바로 PAID→ISSUING으로 넘길 수 있다. 결제가 확정됐다는 것만 본다
+        assertThat(orderStatus).isIn("PAID", "ISSUING");
         assertThat(paidHistory).isEqualTo(1);
         assertThat(callbackRows).isEqualTo(1);
     }
