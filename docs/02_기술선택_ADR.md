@@ -25,6 +25,7 @@
 | 14 | PR 화면 캡처 | **Playwright MCP** | 같은 조건으로 before/after 캡처. 필수 테스트는 백엔드에서 증명 |
 | 15 | 백엔드 구조 | **레이어드 아키텍처 (기능 우선 패키지 + 계층) + ArchUnit·Lombok·validation** | 모든 기능이 같은 모양, 규칙을 테스트로 강제 |
 | 16 | 어드민 조회 | **`NamedParameterJdbcTemplate` + 직접 쓴 SQL** (조회 전용) | 세 테이블 JOIN + 선택 조건을 SQL 그대로 보여 줌 |
+| 17 | 프론트 구조 | **기능별 폴더(`features/*`, 백엔드와 같은 이름) + 페이지는 Server, 상호작용만 Client + `server-only`** | 파일만 보고 서버/브라우저를 구분, 실수는 빌드가 잡음 |
 
 ---
 
@@ -255,4 +256,34 @@
   - SQL 문자열이라 컬럼 이름이 틀려도 컴파일 때 모르고 실행해야 안다. 그래서 SQL을 고치면 필터마다 직접 호출해 확인해야 한다
   - offset 페이지네이션이라 데이터가 아주 많아지면 뒤 페이지가 느려진다. 그때는 `created_at, id` 기준 커서 방식으로 바꾼다
   - 목록과 전체 개수를 쿼리 두 번으로 센다. 그 사이에 주문이 생기면 개수가 한 건 어긋날 수 있지만 운영 화면이라 허용했다
+
+### ADR-17. 프론트 구조: 기능별 폴더 + 페이지는 Server, 상호작용만 Client
+
+- **상태**: 채택
+- **맥락**: Next.js를 처음 쓴다. App Router는 파일 하나하나가 서버에서 돌지 브라우저에서 돌지를 정해야 하는데, 규칙 없이 만들면 페이지 전체에 `'use client'`를 붙이거나 서버 전용 코드(내부 API 주소, `cookies()`)를 브라우저 코드에 섞기 쉽다. 면접에서 모든 화면을 설명해야 하므로 화면마다 모양이 같아야 한다
+- **결정**: `.claude/skills/nextjs-architecture/ARCHITECTURE.md`를 프론트 설계 기준으로 삼는다. 핵심은 다음과 같다
+  - **폴더**: `app/`(URL, 조립만) / `features/{plan,order,payment,issue,admin}/`(백엔드 기능 패키지와 같은 이름. `types.ts`, `server.ts`, `client.ts`, `components/`) / `components/`(공용 표시) / `lib/`(fetch·에러·시각)
+  - **경계**: `page.tsx`는 항상 Server Component로 첫 데이터를 채워 보내고, 클릭·타이머가 있는 가장 작은 조각만 `'use client'`. 서버 조회 파일은 `import 'server-only'`로 브라우저에서 import하면 빌드가 실패하게 한다
+  - **데이터**: fetch는 `lib/api-server.ts`·`lib/api-client.ts`로만, 전부 `cache: 'no-store'`. 에러는 백엔드 ProblemDetail을 `ApiError(code, detail)`로 바꾼다. 폴링·버튼은 TanStack Query(ADR-02)
+  - **시각**: UTC 문자열을 받고 표시할 때만 `formatKst`(시간대 고정)
+  - **쓰지 않는 것**: Tailwind·UI 라이브러리, Server Actions, Route Handlers, middleware, 전역 상태 라이브러리
+- **이번에 추가한 라이브러리**
+
+  | 라이브러리 | 왜 | 버린 대안 |
+  |---|---|---|
+  | `server-only` 0.0.1 | 서버 파일을 브라우저 코드가 import하면 빌드가 실패한다. 임시 프로젝트에서 일부러 import해 보고 빌드가 실패하는 것을 확인했다 | 체크리스트로만 지키기: 어겨도 빌드가 통과하고, 내부 주소가 브라우저 번들에 들어갈 수 있다 |
+- **고려한 대안**
+
+  | 대안 | 장점 | 버린 이유 |
+  |---|---|---|
+  | 종류별 폴더(`components/`, `hooks/`, `api/` 아래에 모든 기능) | 처음 보기에 단순, 예제가 많음 | 결제 화면 하나를 고칠 때 폴더 세 곳을 오간다. 백엔드 기능 이름과 맞지 않아 "이 화면의 API는 어디?"를 설명하기 어렵다 |
+  | 모든 코드를 `app/` 안에 (`app/checkout/_components/`) | 화면과 코드가 붙어 있음 | 어드민과 사용자 화면이 같은 주문 타입·폴러를 쓸 때 둘 중 한 화면 폴더에서 가져와야 한다 |
+  | FSD(Feature-Sliced Design) | 규칙이 체계적 | 계층(shared, entities, features, widgets, pages)과 용어가 많아 화면 다섯 개짜리 과제에 비해 설명할 것이 많다 |
+  | Server Actions로 쓰기 처리 | fetch 코드가 줄어듦 | 멱등키 헤더를 명시적으로 다루기 어렵고, 처음 배울 개념이 하나 더 는다(ADR-02) |
+- **근거 (1년차 말투)**: "Next.js가 처음이라 '이 코드가 서버에서 도나, 브라우저에서 도나'를 파일만 보고 알 수 있게 하고 싶었습니다. 그래서 페이지는 무조건 서버, 버튼이나 폴링처럼 움직이는 조각만 브라우저로 정하고, 서버 전용 파일은 `server-only`로 막아서 실수하면 빌드가 실패하게 했습니다. 폴더는 백엔드와 같은 기능 이름으로 나눠서, 화면 하나를 백엔드 API까지 같은 이름으로 따라가며 설명할 수 있게 했습니다."
+- **처음 써 봄?**: ✍️ (App Router, `server-only`, TanStack Query 중 처음 써 본 것과 익힌 방법)
+- **한계와 바꿀 조건**
+  - `types.ts`를 백엔드 dto를 보고 손으로 맞춘다. 틀려도 빌드가 잡지 못한다. API가 많아지면 OpenAPI로 타입을 생성하는 것을 검토한다
+  - 기능 사이 import 규칙(다른 기능은 `types`만)은 빌드가 강제하지 않는다. 체크리스트와 리뷰로 지킨다
+  - rewrites 주소가 빌드 때 정해진다. 배포 환경마다 이미지를 따로 빌드해야 한다
 

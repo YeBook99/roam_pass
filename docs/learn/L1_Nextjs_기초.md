@@ -246,6 +246,7 @@ import { useState } from 'react';
 
 export function PayButton({ orderNo }: { orderNo: string }) {
   // 페이지에 들어올 때 한 번만 생성 → 연타·재시도해도 같은 키 (06 §6)
+  // 실제 코드는 lib/idempotency.ts의 newIdempotencyKey를 쓴다. crypto.randomUUID()는 https·localhost에서만 있어서다
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const router = useRouter();
 
