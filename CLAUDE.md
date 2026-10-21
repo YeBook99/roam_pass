@@ -13,7 +13,7 @@
 ## 2. 기술 스택 (근거: `docs/02_기술선택_ADR.md`)
 
 - Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway. 구조는 레이어드 설계 기준(`.claude/skills/layered-architecture/ARCHITECTURE.md`, ADR-15)
-- Frontend: Next.js 15 App Router, TypeScript, TanStack Query
+- Frontend: Next.js 15 App Router, TypeScript, TanStack Query. 구조는 프론트 설계 기준(`.claude/skills/nextjs-architecture/ARCHITECTURE.md`, ADR-17)
 - DB: PostgreSQL 16 (로컬 docker compose, 배포 AWS RDS) / 배포: AWS EC2
 - 외부 연동(PG·공급사 호출): `infra.{시스템}`의 Client 인터페이스 뒤에 둔다
 - 모의 PG·공급사: 같은 앱의 `mockpg`, `mocksupplier` 기능 패키지. 호출은 반드시 **실제 HTTP**(RestClient)
@@ -44,6 +44,7 @@
 
 1. **작업 전에 브랜치부터 만든다.** develop에서 `<type>/<scope>-<설명>` 브랜치를 만든다 → `/branch-pr`
    - 백엔드 뼈대를 만들거나 기능을 시작할 때는 코드를 쓰기 전에 `.claude/skills/layered-architecture/ARCHITECTURE.md` 기준으로 설계안을 먼저 정한다 → `/layered-architecture`
+   - 프론트 뼈대를 만들거나 화면을 추가할 때도 코드를 쓰기 전에 `.claude/skills/nextjs-architecture/ARCHITECTURE.md` 기준으로 화면 설계안(서버/클라이언트 구분)을 먼저 정한다 → `/nextjs-architecture`
 2. **UI(`frontend/**`)를 고칠 때는 수정을 시작하기 전에** before 화면을 캡처한다 → `/ui-screenshot`
 3. 상태나 전이를 바꾸면 `/state-transition` 체크리스트를 따른다. 기술 결정이 생기면 `/adr`로 남긴다
 4. 커밋은 기능 단위로 나눈다 → `/commit`
