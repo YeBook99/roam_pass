@@ -9,6 +9,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @SpringBootTest(properties = {
         "PG_WEBHOOK_SECRET=test-secret",
         "external.pg.base-url=http://localhost:1",   // 테스트가 로컬에서 떠 있는 서버(8080)의 모의 PG를 실수로 부르지 않게
+        "external.supplier.base-url=http://localhost:1",   // 모의 공급사도 마찬가지
         "app.payment.reconcile-delay-ms=3600000",   // 테스트 중에 대사 스케줄러가 끼어들지 않게
 })
 public abstract class IntegrationTestSupport {

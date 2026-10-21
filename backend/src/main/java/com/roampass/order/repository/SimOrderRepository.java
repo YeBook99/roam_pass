@@ -22,4 +22,14 @@ public interface SimOrderRepository extends JpaRepository<SimOrder, Long> {
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE sim_order SET paid_at = :paidAt, updated_at = :paidAt WHERE id = :id", nativeQuery = true)
     int recordPaidAt(@Param("id") long id, @Param("paidAt") Instant paidAt);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE sim_order SET issue_requested_at = :now, updated_at = :now WHERE id = :id", nativeQuery = true)
+    int recordIssueRequestedAt(@Param("id") long id, @Param("now") Instant now);
+
+    @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE sim_order SET supplier_order_no = :supplierOrderNo, updated_at = :now WHERE id = :id",
+            nativeQuery = true)
+    int recordSupplierOrderNo(@Param("id") long id, @Param("supplierOrderNo") String supplierOrderNo,
+                              @Param("now") Instant now);
 }

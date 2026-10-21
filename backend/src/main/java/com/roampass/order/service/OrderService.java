@@ -7,6 +7,7 @@ import com.roampass.history.domain.Signal;
 import com.roampass.history.domain.TargetType;
 import com.roampass.history.service.StatusHistoryService;
 import com.roampass.order.domain.OrderNo;
+import com.roampass.order.domain.OrderPaidEvent;
 import com.roampass.order.domain.OrderStatus;
 import com.roampass.order.domain.SimOrder;
 import com.roampass.order.dto.OrderResponse;
@@ -18,7 +19,9 @@ import com.roampass.plan.service.PlanService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ public class OrderService {
     private final PlanService planService;
     private final StatusHistoryService historyService;
     private final OrderProperties orderProperties;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     @Transactional
@@ -71,12 +75,11 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderStatus getStatus(Long orderId) {
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND))
-                .getStatus();
+        return getOrder(orderId).getStatus();
     }
 
     // 결제 확정: PENDING→PAID. 이미 PENDING이 아니면(만료 등) false
+    // 성공하면 OrderPaidEvent를 발행한다. 발급 기능이 이 트랜잭션이 커밋된 뒤에 받아서 발급을 시작한다
     @Transactional
     public boolean markPaid(Long orderId, Signal signal) {
         Instant now = Instant.now(clock);
@@ -84,7 +87,25 @@ public class OrderService {
             return false;
         }
         orderRepository.recordPaidAt(orderId, now);
+        eventPublisher.publishEvent(new OrderPaidEvent(orderId, getOrder(orderId).getSimType()));
         return true;
+    }
+
+    // 발급 기능용 tx1: PAID→ISSUING을 선점하고 요청 시각을 남긴다. 성공하면 주문번호, 다른 요청이 먼저 바꿨으면 empty
+    @Transactional
+    public Optional<String> startIssuing(Long orderId) {
+        Instant now = Instant.now(clock);
+        if (!transit(orderId, OrderStatus.PAID, OrderStatus.ISSUING, Actor.SYSTEM, Signal.EVENT, "발급 요청", now)) {
+            return Optional.empty();
+        }
+        orderRepository.recordIssueRequestedAt(orderId, now);
+        return Optional.of(getOrder(orderId).getOrderNo());
+    }
+
+    // 발급 기능용 tx2: 공급사가 접수하며 준 supplierOrderNo를 저장한다
+    @Transactional
+    public void recordSupplierOrderNo(Long orderId, String supplierOrderNo) {
+        orderRepository.recordSupplierOrderNo(orderId, supplierOrderNo, Instant.now(clock));
     }
 
     // 상태 선점: 허용된 전이인지 검사 → 조건부 UPDATE → 바뀌었을 때만 같은 트랜잭션에서 이력 (CLAUDE.md §3-2)
@@ -98,6 +119,12 @@ public class OrderService {
         }
         historyService.record(TargetType.ORDER, orderId, from.name(), to.name(), actor, signal, reason);
         return true;
+    }
+
+    // clearAutomatically 조건부 UPDATE 뒤에 부르면 DB의 최신 상태를 다시 읽는다
+    private SimOrder getOrder(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND));
     }
 
     private SimOrder getMine(String orderNo, String userId) {

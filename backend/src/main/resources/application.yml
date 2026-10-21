@@ -40,6 +40,10 @@ external:
     connect-timeout: 1s
     read-timeout: 3s              # 이보다 늦으면 "결과 모름"으로 보고 READY로 둔다
     webhook-secret: ${PG_WEBHOOK_SECRET}
+  supplier:
+    base-url: ${app.public-base-url}/mock/supplier   # 실제라면 공급사 주소. 지금은 같은 앱의 모의 공급사
+    connect-timeout: 1s
+    read-timeout: 3s
 
 mock:
   enabled: ${MOCK_ENABLED:false}  # 모의 PG API. 시연 환경(compose)에서만 켠다
