@@ -14,6 +14,9 @@ public interface SimOrderRepository extends JpaRepository<SimOrder, Long> {
 
     Optional<SimOrder> findByOrderNoAndUserId(String orderNo, String userId);
 
+    // 내 주문 목록 (최신순). ix_sim_order_user_created 인덱스를 탄다
+    List<SimOrder> findByUserIdOrderByCreatedAtDesc(String userId);
+
     Optional<SimOrder> findBySupplierOrderNo(String supplierOrderNo);
 
     Optional<SimOrder> findByOrderNo(String orderNo);

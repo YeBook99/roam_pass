@@ -57,6 +57,14 @@ public class OrderService {
         return OrderResponse.from(order);
     }
 
+    // 내 SIM 목록 화면용. 로그인 시스템이 없어서 X-User-Id로 받은 사용자의 주문만 돌려준다
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getMyOrders(String userId) {
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(OrderResponse::from)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public OrderResponse getMyOrder(String orderNo, String userId) {
         return OrderResponse.from(getMine(orderNo, userId));
