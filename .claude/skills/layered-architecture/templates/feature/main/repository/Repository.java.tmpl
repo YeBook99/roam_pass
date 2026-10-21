@@ -1,0 +1,10 @@
+package {{base}}.{{feature}}.repository;
+
+import {{base}}.{{feature}}.domain.{{Entity}};
+import org.springframework.data.jpa.repository.JpaRepository;
+
+// 파생 쿼리는 조건 2개 이하만. 길어지면 @Query + 의미 있는 이름 (ARCHITECTURE.md §12.3)
+public interface {{Entity}}Repository extends JpaRepository<{{Entity}}, Long> {
+
+    boolean existsByCode(String code);
+}

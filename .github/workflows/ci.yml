@@ -1,0 +1,88 @@
+# CI — PR이 develop/main에 머지된 뒤(push)에만 돈다. PR 단계에서는 돌지 않는다.
+#   PR 전 점검은 로컬에서 한다: ./gradlew test, 시크릿 스캔, invariant-reviewer (CLAUDE.md §5)
+#   실패하면 develop에서 고치는 PR을 바로 올린다.
+# 러너: 저장소 변수 RUNNER_LABELS(JSON)로 전환. 없으면 GitHub 기본 러너(ubuntu-latest).
+#   예) RUNNER_LABELS = ["self-hosted","linux","roampass"]
+name: CI
+run-name: "CI · ${{ github.ref_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  harness:
+    name: 규칙 검사 (커밋·시크릿)
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    outputs:
+      backend: ${{ steps.detect.outputs.backend }}
+      frontend: ${{ steps.detect.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                 # 커밋 범위 검사를 위해 전체 이력
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 구성 요소 감지 (backend / frontend)
+        id: detect
+        run: bash scripts/ci/detect-parts.sh
+
+      - name: 커밋 메시지 템플릿 검사 (이번 push로 들어온 커밋)
+        if: github.event.before != '0000000000000000000000000000000000000000'
+        run: bash scripts/ci/lint-commits.sh "${{ github.event.before }}"
+
+      - name: 시크릿 검사
+        run: node scripts/ci/secret-scan.mjs
+
+  backend:
+    name: 백엔드 테스트 (Testcontainers)
+    needs: harness
+    if: needs.harness.outputs.backend == 'true'
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - name: 테스트 (필수 테스트 + ArchitectureTest)
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew test --no-daemon
+      - name: 테스트 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-report
+          path: backend/build/reports/tests/test
+          if-no-files-found: ignore
+
+  frontend:
+    name: 프론트 빌드 (서버/클라이언트 경계 검사)
+    needs: harness
+    if: needs.harness.outputs.frontend == 'true'
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '"ubuntu-latest"') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - working-directory: frontend
+        run: |
+          npm ci
+          npm run lint --if-present
+          npm run build

@@ -1,0 +1,77 @@
+# 운영(EC2) 실행: docker compose -f docker-compose.prod.yml up -d   (docs/10, docs/learn/L5)
+# 이미지는 EC2에서 빌드하지 않는다. CD(GitHub Actions)가 빌드해 GHCR에 올린 것을 받기만 한다(pull)
+# 값은 서버의 .env에서 읽는다(저장소에 넣지 않음). 키 목록은 deploy/prod.env.example
+services:
+  # DB도 EC2 안의 컨테이너로 띄운다(RDS 안 씀, ADR-12). 5432는 밖으로 열지 않는다
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: roampass
+      POSTGRES_USER: roampass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env에 POSTGRES_PASSWORD가 없습니다}
+    # 메모리 1GB 서버라 기본값보다 작게 쓴다 (기본 shared_buffers 128MB, max_connections 100)
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=30"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # 컨테이너를 지우고 다시 띄워도 데이터는 남는다
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roampass -d roampass"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/yebook99/roampass-backend:${IMAGE_TAG:-latest}
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/roampass
+      DB_USERNAME: roampass
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      PG_WEBHOOK_SECRET: ${PG_WEBHOOK_SECRET:?.env에 PG_WEBHOOK_SECRET이 없습니다}
+      SUPPLIER_CALLBACK_SECRET: ${SUPPLIER_CALLBACK_SECRET:?.env에 SUPPLIER_CALLBACK_SECRET이 없습니다}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:?.env에 APP_PUBLIC_BASE_URL이 없습니다}   # 모의 PG·공급사가 웹훅·콜백을 보낼 공개 주소
+      MOCK_ENABLED: "true"                                  # 시연에 모의 PG·공급사가 필요하다
+      JAVA_TOOL_OPTIONS: -Xmx384m -XX:MaxMetaspaceSize=128m # JVM이 메모리를 다 쓰지 않게 상한
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped   # 서버 재부팅·장애 시 자동 재시작 → 스케줄러가 DB에 남은 일을 이어서 한다
+
+  frontend:
+    image: ghcr.io/yebook99/roampass-frontend:${IMAGE_TAG:-latest}
+    environment:
+      API_INTERNAL_URL: http://backend:8080   # 이미지 빌드 때 rewrites에 박힌 주소와 같다(서비스 이름 backend)
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # 바깥 요청을 받는 유일한 컨테이너. HTTPS 인증서를 자동으로 받고 /api·/mock은 Spring, 나머지는 Next로 보낸다
+  caddy:
+    image: caddy:2.8.4-alpine
+    ports:
+      - "80:80"     # 인증서 발급(Let's Encrypt)과 https로 넘기기
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?.env에 SITE_DOMAIN이 없습니다}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data   # 받은 인증서. 재시작할 때마다 다시 받지 않게 보관
+    depends_on:
+      frontend:
+        condition: service_healthy   # 화면이 준비된 뒤에 받기 시작한다 (기동 직후 502 방지)
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:

@@ -1,0 +1,32 @@
+package {{base}}.global.error;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+// 특정 기능에 속하지 않는 에러만 둔다. 기능 에러는 {feature}.exception.{Feature}ErrorCode
+@RequiredArgsConstructor
+public enum CommonErrorCode implements ErrorCode {
+
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+    EXTERNAL_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "외부 시스템이 응답하지 않습니다."),
+    EXTERNAL_ERROR(HttpStatus.BAD_GATEWAY, "외부 시스템 처리에 실패했습니다."),
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다.");
+
+    private final HttpStatus status;
+    private final String message;
+
+    @Override
+    public HttpStatus status() {
+        return status;
+    }
+
+    @Override
+    public String code() {
+        return name();
+    }
+
+    @Override
+    public String message() {
+        return message;
+    }
+}

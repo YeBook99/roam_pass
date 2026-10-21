@@ -1,0 +1,57 @@
+# 로컬 실행: cp .env.example .env && docker compose up -d --build --wait
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: roampass
+      POSTGRES_USER: roampass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?.env가 없습니다. cp .env.example .env 를 먼저 실행하세요}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roampass -d roampass"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build: ./backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/roampass
+      DB_USERNAME: roampass
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?.env가 없습니다. cp .env.example .env 를 먼저 실행하세요}
+      PG_WEBHOOK_SECRET: ${PG_WEBHOOK_SECRET:?.env에 PG_WEBHOOK_SECRET이 없습니다. cp .env.example .env 를 다시 실행하세요}
+      SUPPLIER_CALLBACK_SECRET: ${SUPPLIER_CALLBACK_SECRET:?.env에 SUPPLIER_CALLBACK_SECRET이 없습니다. cp .env.example .env 를 다시 실행하세요}
+      MOCK_ENABLED: "true"        # 시연에 모의 PG가 필요하다
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_INTERNAL_URL: http://backend:8080   # rewrites 주소는 빌드 때 정해진다
+    environment:
+      API_INTERNAL_URL: http://backend:8080     # Server Component가 Spring을 부를 주소
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

@@ -1,0 +1,5 @@
+package {{base}}.{{feature}}.dto;
+
+// Service 입력. HTTP 형식(검증 애노테이션, JSON 필드명)과 분리된다 (ARCHITECTURE.md §6.3)
+public record {{Feature}}CreateCommand(String code, String name) {
+}

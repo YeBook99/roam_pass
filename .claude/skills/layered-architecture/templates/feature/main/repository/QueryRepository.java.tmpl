@@ -1,0 +1,23 @@
+package {{base}}.{{feature}}.repository;
+
+import {{base}}.{{feature}}.domain.{{Entity}};
+import {{base}}.{{feature}}.dto.{{Feature}}SummaryView;
+import java.util.List;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.query.Param;
+
+// 여러 테이블을 조인하는 화면용 "읽기 전용" 조회 (ARCHITECTURE.md §3, §12.1)
+// 쓰기 메서드를 두지 않는다. 결과는 Entity가 아니라 dto 패키지의 projection으로 받는다
+public interface {{Feature}}QueryRepository extends Repository<{{Entity}}, Long> {
+
+    @Query(value = """
+            SELECT t.id   AS id,
+                   t.code AS code,
+                   t.name AS name
+            FROM {{table}} t
+            WHERE t.name LIKE CONCAT('%', :keyword, '%')
+            ORDER BY t.id DESC
+            """, nativeQuery = true)
+    List<{{Feature}}SummaryView> searchSummaries(@Param("keyword") String keyword);
+}

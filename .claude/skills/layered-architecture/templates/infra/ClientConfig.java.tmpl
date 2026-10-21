@@ -1,0 +1,26 @@
+package {{base}}.infra.{{system}};
+
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestClient;
+
+// 타임아웃은 반드시 설정한다. 기본값(무한 대기)이면 외부 장애가 우리 스레드를 모두 잡는다 (ARCHITECTURE.md §13-3)
+@Configuration
+@EnableConfigurationProperties({{System}}Properties.class)
+public class {{System}}ClientConfig {
+
+    @Bean
+    public {{System}}Client {{system}}Client(RestClient.Builder builder, {{System}}Properties properties) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(properties.connectTimeout());
+        requestFactory.setReadTimeout(properties.readTimeout());
+
+        RestClient restClient = builder.clone()
+                .baseUrl(properties.baseUrl())
+                .requestFactory(requestFactory)
+                .build();
+        return new Http{{System}}Client(restClient);
+    }
+}

@@ -1,0 +1,188 @@
+/* 화면 디자인: design-taste-frontend 스킬의 업무 화면 기준, "무채색 장부" 스타일 (.taste-skill/direction.json)
+   - 틀(메뉴·테두리·버튼)에는 색이 없다. 가장 중요한 버튼 하나만 거의 검정
+   - 색은 상태 표시와 이 서비스만의 요소(사용 기간 막대) 하나에만 쓴다
+   - 그림자·그라데이션·빛 번짐을 쓰지 않는다. 면은 흰 카드 + 1px 테두리로 나눈다
+   값은 아래 :root 변수에만 두고, 나머지 규칙은 변수를 가져다 쓴다 → 바꿀 때는 변수만 고친다 */
+:root {
+  --ground: #f2f4f7; /* 바탕. 장부·계량기 같은 연한 푸른 회색 (이 서비스의 얼굴) */
+  --surface: #ffffff; /* 카드 */
+  --raised: #eeeeee; /* 메뉴의 지금 화면 표시, 보조 버튼 */
+  --border: #e6e6e6; /* 카드 테두리 */
+  --rule: #f0f0f0; /* 표의 줄 */
+  --control: #d4d4d4; /* 입력칸 테두리 */
+  --text: #0a0a0a;
+  --muted: #6b6b6b; /* 보조 글자. 흰 바탕과 바탕색 모두에서 대비 4.5:1 이상 */
+  --primary: #141414; /* 화면에 하나뿐인 주요 버튼 */
+  --data: #1d5fbf; /* 데이터 색 하나. 사용 기간 막대에만 쓴다 */
+
+  --pill-positive-bg: #dcfae5; --pill-positive-ink: #04250e;
+  --pill-negative-bg: #ffedea; --pill-negative-ink: #831c1e;
+  --pill-warning-bg: #fffbeb; --pill-warning-ink: #92400e;
+  --pill-neutral-bg: #eeeeee; --pill-neutral-ink: #3d3d3d;
+  --negative: #c4242a;
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --gap: 12px; /* 카드 사이 간격 하나만 쓴다 (가로·세로 같게) */
+  --pad: 24px; /* 카드 안쪽 여백 */
+  --control-height: 36px;
+  --row-height: 44px;
+  --sidebar-width: 240px;
+  --fs-title: 24px;
+  --fs-section: 16px;
+  --fs-body: 14px;
+  --fs-small: 12px;
+
+  /* layout.tsx의 next/font가 만든 변수. 한글은 Geist에 없어서 시스템 한글 글꼴로 보인다 */
+  --font: var(--font-geist), system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 20px;
+  background: var(--ground);
+  color: var(--text);
+}
+h1 { font-size: var(--fs-title); line-height: 32px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+h2 { font-size: var(--fs-section); line-height: 24px; font-weight: 600; margin: 0; }
+p { margin: 0; }
+a { color: var(--text); }
+
+/* ── 화면 틀: 왼쪽 메뉴 + 작업 영역. 메뉴는 바탕과 같은 색이고 사이에 선 하나 ── */
+.shell { display: grid; grid-template-columns: var(--sidebar-width) 1fr; min-height: 100vh; }
+.sidebar { border-right: 1px solid var(--border); padding: 20px 12px; display: flex; flex-direction: column; gap: 24px; }
+.sidebar-top { display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+.menu-button { display: none; }
+.sidebar-body { display: flex; flex-direction: column; gap: 24px; }
+.user-form { display: flex; flex-direction: column; gap: 8px; padding: 0 8px; }
+.user-form .row { flex-wrap: nowrap; }
+.user-form input { width: 100%; min-width: 0; }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-label { font-size: var(--fs-small); color: var(--muted); padding: 0 8px 6px; }
+.nav-group a { display: block; height: 32px; line-height: 32px; padding: 0 8px; border-radius: var(--radius-control); text-decoration: none; color: var(--muted); }
+.nav-group a:hover { color: var(--text); }
+.nav-group a[aria-current='page'] { background: var(--raised); color: var(--text); }
+.canvas { padding: 32px 40px 64px; min-width: 0; }
+.page { max-width: 1200px; display: flex; flex-direction: column; gap: var(--gap); }
+
+/* 제목 줄: 왼쪽 제목·설명, 오른쪽 실제 동작(새로고침 등)만 */
+.title-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.title-row > div:first-child { display: flex; flex-direction: column; gap: 4px; } /* 왼쪽(제목·설명)만 세로로 쌓는다 */
+.subtitle { color: var(--muted); }
+
+/* ── 카드 ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); padding: var(--pad); min-width: 0; }
+.card-flush { padding: 8px var(--pad); } /* 표만 담는 카드: 위아래 여백을 줄여 표가 카드를 채운다 */
+.card > h2 { margin-bottom: 16px; }
+.stack { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.narrow { max-width: 520px; }
+.note { margin-top: 12px; }
+.empty { padding: 16px 8px; color: var(--muted); }
+.pager { justify-content: flex-end; gap: 16px; }
+/* 넓은 쪽(질문의 답) + 좁은 쪽. 카드는 각자 자기 높이를 갖는다(빈 칸이 생기지 않게) */
+.grid-main-side { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); align-items: start; }
+/* 어드민 상세: 타임라인 표가 넓어서, 노트북 폭(1320px 이하)에서는 타임라인 위·정보 아래로 쌓는다 */
+@media (max-width: 1320px) { .grid-detail { grid-template-columns: 1fr; } }
+
+/* 이름–값 목록 (주문 정보, 결제 정보) */
+.kv { display: grid; grid-template-columns: max-content 1fr; column-gap: 24px; row-gap: 10px; margin: 0; width: 100%; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kv-row { display: contents; } /* 이름·값 한 쌍을 묶되 격자 배치에는 끼어들지 않게 */
+.kv-group + .kv-group { margin-top: 20px; }
+.kv-group > h3 { font-size: var(--fs-small); font-weight: 500; color: var(--muted); margin: 0 0 8px; }
+
+/* ── 표: 줄과 정렬로만. 머리글은 회색 작은 글씨, 숫자는 오른쪽 정렬·같은 폭 숫자 ── */
+.table-wrap { width: 100%; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th { font-size: var(--fs-small); font-weight: 400; color: var(--muted); text-align: left; height: 36px; padding: 0 8px; white-space: nowrap; }
+td { height: var(--row-height); padding: 0 8px; border-top: 1px solid var(--rule); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+td.wrap { white-space: normal; min-width: 96px; } /* 사유처럼 긴 글은 줄을 바꿔 표가 카드 밖으로 나가지 않게 */
+.mono { font-family: var(--font-mono); font-size: 13px; }
+h1.mono { font-size: var(--fs-title); letter-spacing: 0; } /* 제목에 쓴 번호는 제목 크기 그대로 */
+.muted { color: var(--muted); }
+.small { font-size: var(--fs-small); }
+td a { text-decoration: none; font-weight: 500; }
+td a:hover { text-decoration: underline; }
+
+/* ── 상태 표시: 연한 바탕 + 같은 계열의 진한 글자 ── */
+.pill { display: inline-block; flex: none; white-space: nowrap; height: 20px; line-height: 20px; padding: 0 8px; border-radius: 4px; font-size: var(--fs-small); font-weight: 500; }
+.pill-positive { background: var(--pill-positive-bg); color: var(--pill-positive-ink); }
+.pill-negative { background: var(--pill-negative-bg); color: var(--pill-negative-ink); }
+.pill-warning { background: var(--pill-warning-bg); color: var(--pill-warning-ink); }
+.pill-neutral { background: var(--pill-neutral-bg); color: var(--pill-neutral-ink); }
+.badge { display: inline-block; height: 20px; line-height: 20px; padding: 0 8px; border-radius: 4px; font-size: var(--fs-small); background: var(--pill-neutral-bg); color: var(--pill-neutral-ink); font-variant-numeric: tabular-nums; }
+.badge-stale { background: var(--pill-warning-bg); color: var(--pill-warning-ink); }
+
+/* ── 버튼: 기본은 흰 바탕 + 테두리, 주요 버튼(화면에 하나)은 거의 검정. 그림자 없음 ── */
+button {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  height: var(--control-height);
+  padding: 0 14px;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+}
+button:hover:not(:disabled) { background: var(--raised); }
+button { flex: none; white-space: nowrap; } /* 좁은 곳에서도 버튼 글자가 두 줄로 깨지지 않게 */
+button:disabled { cursor: default; color: var(--muted); background: var(--raised); }
+.btn-primary { color: #ffffff; background: var(--primary); border-color: var(--primary); font-weight: 500; }
+.btn-primary:hover:not(:disabled) { background: #333333; }
+
+/* ── 입력: 이름은 칸 위에, 칸은 흰 바탕 + 테두리 ── */
+.field { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.field-label { font-weight: 500; }
+input, select {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  height: var(--control-height);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  padding: 0 10px;
+}
+input::placeholder { color: var(--muted); }
+input[type='checkbox'] { height: auto; padding: 0; margin: 0 6px 0 0; vertical-align: middle; }
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+.filters .field { width: auto; }
+
+/* ── 사용 기간 막대: 이 서비스만의 요소. 개통부터 만료까지 지난 시간을 실제 비율대로 채운다 (색은 --data 하나) ── */
+.usage { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.usage-head { display: flex; justify-content: space-between; align-items: baseline; }
+.usage-left { font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 999px; background: var(--raised); overflow: hidden; }
+.bar-fill { height: 100%; background: var(--data); }
+.bar-fill.done { background: var(--muted); }
+.usage-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--fs-small); font-variant-numeric: tabular-nums; }
+
+.code { display: block; width: 100%; padding: 12px; background: var(--ground); border-radius: var(--radius-control); font-family: var(--font-mono); font-size: 13px; word-break: break-all; }
+.error { color: var(--negative); }
+ul { margin: 0; padding-left: 20px; }
+li + li { margin-top: 6px; }
+
+/* ── 태블릿·휴대폰: 왼쪽 메뉴가 위쪽 띠로 접히고 [메뉴]로 연다. 넓은 쪽·좁은 쪽 카드는 위아래로 ── */
+@media (max-width: 900px) {
+  .shell { display: block; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 8px; gap: 0; position: sticky; top: 0; background: var(--ground); z-index: 1; }
+  .sidebar-top { height: 32px; }
+  .menu-button { display: inline-block; height: 32px; }
+  .sidebar-body { display: none; padding: 16px 0 8px; }
+  .sidebar[data-open='true'] .sidebar-body { display: flex; }
+  .canvas { padding: 20px 16px 48px; }
+  .grid-main-side { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; line-height: 28px; }
+  .card { padding: 16px; }
+  .card-flush { padding: 4px 16px; }
+}

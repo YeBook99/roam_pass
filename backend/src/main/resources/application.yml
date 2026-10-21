@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: roampass
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/roampass}
+    username: ${DB_USERNAME:roampass}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate          # 스키마는 Flyway만 만든다. 엔티티와 다르면 기동 실패
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC          # timestamptz를 UTC로 읽고 쓴다
+  task:
+    scheduling:
+      pool:
+        size: 4                   # 대사 스케줄러와 모의 PG 웹훅 예약 전송이 함께 쓴다
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+app:
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}   # 우리 서버 주소 (모의 PG가 웹훅을 보낼 곳)
+  order:
+    payment-ttl: PT10M            # 결제 대기 만료 시간
+  payment:
+    reconcile-after: PT1M         # READY로 이만큼 지난 결제를 PG에 조회해 확정한다
+    reconcile-give-up-after: PT15M   # 이보다 오래된 READY는 더 조회하지 않고 어드민 이상 건으로 둔다
+    reconcile-delay-ms: 60000     # 대사 스케줄러 주기
+  issue:
+    paid-pickup-after: PT30S      # 결제 후 이만큼 지나도 PAID인 주문을 안전망 스케줄러가 다시 처리한다
+    scheduler-delay-ms: 30000     # 발급 안전망 스케줄러 주기
+  install:
+    poll-delay-ms: 60000          # 설치 상태 확인 스케줄러 주기 (개통 전 SIM을 공급사에 물어본다)
+
+# 외부 시스템 연동 (infra.*). 접속 주소·타임아웃·비밀키 (ARCHITECTURE.md §13·§14)
+external:
+  pg:
+    base-url: ${app.public-base-url}/mock/pg   # 실제 PG라면 PG사 주소. 지금은 같은 앱의 모의 PG를 HTTP로 부른다
+    connect-timeout: 1s
+    read-timeout: 3s              # 이보다 늦으면 "결과 모름"으로 보고 READY로 둔다
+    webhook-secret: ${PG_WEBHOOK_SECRET}
+  supplier:
+    base-url: ${app.public-base-url}/mock/supplier   # 실제라면 공급사 주소. 지금은 같은 앱의 모의 공급사
+    connect-timeout: 1s
+    read-timeout: 3s
+    callback-secret: ${SUPPLIER_CALLBACK_SECRET}     # 공급사 콜백 서명 키
+
+mock:
+  enabled: ${MOCK_ENABLED:false}  # 모의 PG API. 시연 환경(compose)에서만 켠다
+  pg:
+    webhook-secret: ${PG_WEBHOOK_SECRET}       # 원래는 PG가 발급하는 키. 모의 PG와 우리가 같은 값을 쓴다
+    callback-base-url: ${app.public-base-url}  # 모의 PG가 웹훅을 보낼 우리 서버 주소
+  supplier:
+    callback-secret: ${SUPPLIER_CALLBACK_SECRET}   # 원래는 공급사와 나눠 가진 키. 모의 공급사와 우리가 같은 값을 쓴다
+    callback-base-url: ${app.public-base-url}      # 모의 공급사가 콜백을 보낼 우리 서버 주소
+    callback-delay-ms: 3000                        # 접수 후 콜백까지 기다리는 시간

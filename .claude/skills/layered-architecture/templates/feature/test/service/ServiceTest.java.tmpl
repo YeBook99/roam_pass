@@ -1,0 +1,52 @@
+package {{base}}.{{feature}}.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import {{base}}.global.error.BusinessException;
+import {{base}}.support.IntegrationTestSupport;
+import {{base}}.{{feature}}.dto.{{Feature}}CreateCommand;
+import {{base}}.{{feature}}.dto.{{Feature}}Response;
+import {{base}}.{{feature}}.exception.{{Feature}}ErrorCode;
+import {{base}}.{{feature}}.repository.{{Entity}}Repository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+// 실제 DB에서 저장 결과(row 수, 값)를 검증한다 (ARCHITECTURE.md §16)
+// @Transactional을 붙이지 않는다: 실제 커밋 결과를 봐야 하고, 데이터는 @AfterEach에서 지운다
+class {{Feature}}ServiceTest extends IntegrationTestSupport {
+
+    @Autowired
+    private {{Feature}}Service {{feature}}Service;
+
+    @Autowired
+    private {{Entity}}Repository {{entity}}Repository;
+
+    @AfterEach
+    void tearDown() {
+        {{entity}}Repository.deleteAllInBatch();
+    }
+
+    @Test
+    @DisplayName("등록하면 row 1개가 저장되고 생성 시각이 채워진다")
+    void create() {
+        {{Feature}}Response response = {{feature}}Service.create(new {{Feature}}CreateCommand("C-001", "이름"));
+
+        assertThat({{entity}}Repository.count()).isEqualTo(1);
+        assertThat(response.id()).isNotNull();
+        assertThat(response.createdAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("같은 코드로 다시 등록하면 DUPLICATE_CODE이고 row는 1개로 남는다")
+    void create_duplicate() {
+        {{feature}}Service.create(new {{Feature}}CreateCommand("C-001", "이름"));
+
+        assertThatThrownBy(() -> {{feature}}Service.create(new {{Feature}}CreateCommand("C-001", "다른 이름")))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo({{Feature}}ErrorCode.DUPLICATE_CODE);
+        assertThat({{entity}}Repository.count()).isEqualTo(1);
+    }
+}

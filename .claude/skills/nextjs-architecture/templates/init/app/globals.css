@@ -1,0 +1,16 @@
+/* UI 완성도는 평가 항목이 아니다. 읽기 쉬운 정도만 맞춘다 */
+body { margin: 0; font-family: system-ui, sans-serif; color: #222; }
+a { color: #1a5fb4; }
+.header { display: flex; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid #ddd; }
+.header nav { display: flex; gap: 16px; }
+.main { max-width: 960px; margin: 0 auto; padding: 24px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; font-size: 14px; }
+button { padding: 8px 16px; cursor: pointer; }
+button:disabled { cursor: default; opacity: 0.6; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #eef; font-size: 12px; }
+.badge-stale { background: #fff3c4; }
+.error { color: #c01c28; }
+.stack { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.code { display: block; padding: 8px; background: #f5f5f5; word-break: break-all; }

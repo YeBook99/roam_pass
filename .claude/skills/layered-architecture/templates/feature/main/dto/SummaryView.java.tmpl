@@ -1,0 +1,11 @@
+package {{base}}.{{feature}}.dto;
+
+// QueryRepository의 네이티브 조회 결과를 받는 projection. 컬럼 별칭(AS id)과 getter 이름이 맞아야 한다
+public interface {{Feature}}SummaryView {
+
+    Long getId();
+
+    String getCode();
+
+    String getName();
+}
