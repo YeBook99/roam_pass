@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { Facts } from '@/components/Facts';
 import { FreshnessBadge } from '@/components/FreshnessBadge';
 import { KstTime } from '@/components/KstTime';
 import { StatusPill } from '@/components/StatusPill';
 import { RefreshControls } from '@/features/admin/components/RefreshControls';
 import { getAdminOrder } from '@/features/admin/server';
+import { INSTALL_STATUS_TONE } from '@/features/issue/types';
+import { ORDER_STATUS_TONE } from '@/features/order/types';
+import { PAYMENT_STATUS_TONE } from '@/features/payment/types';
 import { TIMELINE_TARGET_LABEL, type TimelineItem } from '@/features/admin/types';
 import { orNotFound } from '@/lib/api-server';
 
@@ -14,23 +18,6 @@ const LATE_SIGNAL_MS = 60_000;
 
 function isLate(item: TimelineItem): boolean {
   return Date.parse(item.recordedAt) - Date.parse(item.occurredAt) > LATE_SIGNAL_MS;
-}
-
-// 이름–값 목록 한 묶음. 값이 없으면 회색 대시
-function Facts({ title, rows }: { title: string; rows: [string, React.ReactNode][] }) {
-  return (
-    <div className="kv-group">
-      <h3>{title}</h3>
-      <dl className="kv">
-        {rows.map(([label, value]) => (
-          <div key={label} className="kv-row">
-            <dt>{label}</dt>
-            <dd>{value ?? <span className="muted">–</span>}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
 }
 
 // 어드민 주문 상세 (/admin/orders/주문번호). 이 화면의 질문: "이 주문은 지금 어디까지 왔고, 누가 언제 바꿨나?"
@@ -54,9 +41,18 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <KstTime iso={order.createdAt} />
           </p>
           <div className="row">
-            <StatusPill status={order.orderStatus} />
-            <StatusPill status={order.payStatus} />
-            <StatusPill status={order.installStatus} />
+            <span className="muted">주문</span>
+            <StatusPill tone={ORDER_STATUS_TONE[order.orderStatus]} label={order.orderStatus} />
+            <span className="muted">결제</span>
+            <StatusPill
+              tone={order.payStatus ? PAYMENT_STATUS_TONE[order.payStatus] : 'neutral'}
+              label={order.payStatus}
+            />
+            <span className="muted">설치</span>
+            <StatusPill
+              tone={order.installStatus ? INSTALL_STATUS_TONE[order.installStatus] : 'neutral'}
+              label={order.installStatus}
+            />
           </div>
         </div>
         <div className="row">
@@ -125,7 +121,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 'PG 거래번호',
                 order.pgTid ? (
                   <span key="g" className="mono">
-                    {order.pgTid.slice(0, 13)}…
+                    {order.pgTid}
                   </span>
                 ) : null,
               ],
@@ -139,7 +135,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                 '공급사 주문번호',
                 order.supplierOrderNo ? (
                   <span key="s" className="mono">
-                    {order.supplierOrderNo.slice(0, 13)}…
+                    {order.supplierOrderNo}
                   </span>
                 ) : null,
               ],

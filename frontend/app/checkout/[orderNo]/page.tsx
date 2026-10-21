@@ -1,7 +1,7 @@
 import { KstTime } from '@/components/KstTime';
 import { StatusPill } from '@/components/StatusPill';
 import { getMyOrder } from '@/features/order/server';
-import { ORDER_STATUS_LABEL } from '@/features/order/types';
+import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from '@/features/order/types';
 import { PayButton } from '@/features/payment/components/PayButton';
 import { SIM_TYPE_LABEL } from '@/features/plan/types';
 import { orNotFound } from '@/lib/api-server';
@@ -36,7 +36,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ order
           </dd>
           <dt>상태</dt>
           <dd>
-            <StatusPill status={order.status} label={ORDER_STATUS_LABEL[order.status]} />
+            <StatusPill tone={ORDER_STATUS_TONE[order.status]} label={ORDER_STATUS_LABEL[order.status]} />
           </dd>
           <dt>금액</dt>
           <dd className="num">

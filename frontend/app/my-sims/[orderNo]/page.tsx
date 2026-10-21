@@ -5,9 +5,9 @@ import { QrReveal } from '@/features/issue/components/QrReveal';
 import { RecheckButton } from '@/features/issue/components/RecheckButton';
 import { UsagePeriodBar } from '@/features/issue/components/UsagePeriodBar';
 import { findMyProfile } from '@/features/issue/server';
-import { INSTALL_STATUS_LABEL } from '@/features/issue/types';
+import { INSTALL_STATUS_LABEL, INSTALL_STATUS_TONE } from '@/features/issue/types';
 import { getMyOrder } from '@/features/order/server';
-import { ORDER_STATUS_LABEL } from '@/features/order/types';
+import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from '@/features/order/types';
 import { SIM_TYPE_LABEL } from '@/features/plan/types';
 import { orNotFound } from '@/lib/api-server';
 
@@ -44,7 +44,10 @@ export default async function MySimDetailPage({ params }: { params: Promise<{ or
           <section className="card stack">
             <div className="row">
               <h2>설치 상태</h2>
-              <StatusPill status={profile.installStatus} label={INSTALL_STATUS_LABEL[profile.installStatus]} />
+              <StatusPill
+                tone={INSTALL_STATUS_TONE[profile.installStatus]}
+                label={INSTALL_STATUS_LABEL[profile.installStatus]}
+              />
             </div>
             <UsagePeriodBar activatedAt={profile.activatedAt} expiresAt={profile.expiresAt} now={now} />
             <dl className="kv">
@@ -61,7 +64,7 @@ export default async function MySimDetailPage({ params }: { params: Promise<{ or
           <dl className="kv">
             <dt>상태</dt>
             <dd>
-              <StatusPill status={order.status} label={ORDER_STATUS_LABEL[order.status]} />
+              <StatusPill tone={ORDER_STATUS_TONE[order.status]} label={ORDER_STATUS_LABEL[order.status]} />
             </dd>
             <dt>종류</dt>
             <dd>{SIM_TYPE_LABEL[order.simType]}</dd>

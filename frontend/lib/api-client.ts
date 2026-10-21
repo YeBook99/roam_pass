@@ -18,8 +18,7 @@ export async function clientSend<T>(
   path: string,
   options: { body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<T> {
-  const jsonHeader: Record<string, string> =
-    options.body === undefined ? {} : { 'Content-Type': 'application/json' };
+  const jsonHeader: Record<string, string> = options.body === undefined ? {} : { 'Content-Type': 'application/json' };
   const res = await fetch(path, {
     method,
     cache: 'no-store',

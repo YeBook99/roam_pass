@@ -5,6 +5,9 @@ import { StatusPill } from '@/components/StatusPill';
 import { AdminFilters } from '@/features/admin/components/AdminFilters';
 import { RefreshControls } from '@/features/admin/components/RefreshControls';
 import { getAdminOrders } from '@/features/admin/server';
+import { INSTALL_STATUS_TONE } from '@/features/issue/types';
+import { ORDER_STATUS_TONE } from '@/features/order/types';
+import { PAYMENT_STATUS_TONE } from '@/features/payment/types';
 import { ADMIN_FILTER_KEYS, type AdminFilters as Filters } from '@/features/admin/types';
 import { ApiError } from '@/lib/api-error';
 
@@ -105,13 +108,19 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                   <td>{order.userId}</td>
                   <td>{order.simType}</td>
                   <td>
-                    <StatusPill status={order.orderStatus} />
+                    <StatusPill tone={ORDER_STATUS_TONE[order.orderStatus]} label={order.orderStatus} />
                   </td>
                   <td>
-                    <StatusPill status={order.payStatus} />
+                    <StatusPill
+                      tone={order.payStatus ? PAYMENT_STATUS_TONE[order.payStatus] : 'neutral'}
+                      label={order.payStatus}
+                    />
                   </td>
                   <td>
-                    <StatusPill status={order.installStatus} />
+                    <StatusPill
+                      tone={order.installStatus ? INSTALL_STATUS_TONE[order.installStatus] : 'neutral'}
+                      label={order.installStatus}
+                    />
                   </td>
                   <td className="num">{order.amount.toLocaleString('ko-KR')}원</td>
                   <td className="num">

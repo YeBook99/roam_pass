@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { KstTime } from '@/components/KstTime';
 import { StatusPill } from '@/components/StatusPill';
 import { getMyOrders } from '@/features/order/server';
-import { ORDER_STATUS_LABEL } from '@/features/order/types';
+import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from '@/features/order/types';
 import { SIM_TYPE_LABEL } from '@/features/plan/types';
 
 export const dynamic = 'force-dynamic';
@@ -50,7 +50,7 @@ export default async function MySimsPage() {
                     </td>
                     <td>{SIM_TYPE_LABEL[order.simType]}</td>
                     <td>
-                      <StatusPill status={order.status} label={ORDER_STATUS_LABEL[order.status]} />
+                      <StatusPill tone={ORDER_STATUS_TONE[order.status]} label={ORDER_STATUS_LABEL[order.status]} />
                     </td>
                     <td className="num">{order.amount.toLocaleString('ko-KR')}원</td>
                     <td className="num">

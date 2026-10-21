@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { StatusPill } from '@/components/StatusPill';
 import { useEffect, useState } from 'react';
 import { fetchMyOrder } from '../client';
-import { ISSUE_FINAL_STATUSES, ORDER_STATUS_LABEL, type Order } from '../types';
+import { ISSUE_FINAL_STATUSES, ORDER_STATUS_LABEL, ORDER_STATUS_TONE, type Order } from '../types';
 
 const POLL_INTERVAL_MS = 2_000;
 const SLOW_AFTER_MS = 30_000; // 이 시간이 지나도 안 끝나면 안내 문구를 바꾼다
@@ -49,7 +49,7 @@ export function IssueStatusPoller({ initial }: { initial: Order }) {
     <section className="card stack" aria-live="polite">
       <div className="row">
         <h2>현재 상태</h2>
-        <StatusPill status={order.status} label={ORDER_STATUS_LABEL[order.status]} />
+        <StatusPill tone={ORDER_STATUS_TONE[order.status]} label={ORDER_STATUS_LABEL[order.status]} />
       </div>
 
       {order.status === 'ISSUED' && <Link href={`/my-sims/${order.orderNo}`}>내 SIM에서 설치 코드 보기</Link>}
