@@ -9,6 +9,7 @@
 |---|---|---|
 | `next.config.ts` | `frontend/next.config.ts` (create-next-app 것을 덮어씀) | `/api/*`·`/mock/*` rewrites, standalone 출력 |
 | `Dockerfile` | `frontend/Dockerfile` | 빌드 → standalone 실행 (rewrites 주소는 build arg) |
+| `.dockerignore` | `frontend/.dockerignore` | 로컬 `node_modules`·`.next`·`.env`를 이미지에 넣지 않는다 |
 | `lib/api-error.ts` | `frontend/lib/` | ProblemDetail → `ApiError(status, code, detail)` |
 | `lib/api-server.ts` | `frontend/lib/` | 서버 조회 `serverGet`, 404 → `orNotFound` (`server-only`) |
 | `lib/api-client.ts` | `frontend/lib/` | 브라우저 `clientGet`·`clientSend`, `X-User-Id` 헤더 |

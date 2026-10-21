@@ -61,10 +61,12 @@
 구현하면서 **실제로 실행해 확인한 명령만** 여기에 추가한다.
 
 ```bash
-cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend, 모의 PG 켜짐)
+cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend :8080 + frontend :3000, 모의 PG 켜짐)
 curl localhost:8080/actuator/health                          # {"status":"UP"}
+curl localhost:3000/api/plans                                # 프론트(3000) → rewrites → Spring 연결 확인
 docker compose down -v                                       # 정리 (DB 볼륨까지 삭제). 마이그레이션을 고쳤으면 다시 띄우기 전에 필요
 cd backend && JAVA_HOME=$(/usr/libexec/java_home -v 17) ./gradlew test   # 필수 테스트 + ArchitectureTest (도커 실행 중이어야 함)
+cd frontend && PATH="/usr/local/bin:$PATH" npm run lint && PATH="/usr/local/bin:$PATH" npm run build   # 타입·서버/클라이언트 경계 검사
 curl -X PUT -H 'Content-Type: application/json' localhost:8080/mock/pg/config -d '{"webhookCount":3}'   # 모의 PG 시연 설정
 curl -X POST localhost:8080/mock/reset                       # 모의 PG 설정 초기화
 ```
