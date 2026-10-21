@@ -3,6 +3,7 @@ package com.roampass.infra.supplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,23 @@ public class HttpSupplierClient implements SupplierClient {
         } catch (IOException e) {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public Optional<SupplierProfileState> getProfile(String iccid) {
+        try {
+            ProfileResponse response = restClient.get().uri("/profiles/{iccid}", iccid)
+                    .retrieve()
+                    .body(ProfileResponse.class);
+            return Optional.ofNullable(response).map(r -> new SupplierProfileState(r.state(), r.activatedAt()));
+        } catch (RestClientException e) {
+            log.warn("공급사 프로필 조회 실패 iccid={} : {}", iccid, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    // 공급사 프로필 조회 형식: { "iccid", "state", "activatedAt" }
+    record ProfileResponse(String iccid, String state, Instant activatedAt) {
     }
 
     // 공급사 응답 형식: { "supplierOrderNo": "..." }

@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,4 +29,9 @@ public class SimProfile extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     private InstallStatus installStatus;
+
+    private Instant qrViewedAt;
+    private Instant installedAt;
+    private Instant activatedAt;   // 공급사가 알려 준 개통 시각 (UTC)
+    private Instant expiresAt;     // activatedAt + 일수 × 24시간
 }
