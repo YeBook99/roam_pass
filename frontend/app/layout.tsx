@@ -1,32 +1,43 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
+import { SidebarNav } from '@/components/SidebarNav';
+import { SimMark } from '@/components/SimMark';
+import { UserIdForm } from '@/components/UserIdForm';
+import { getUserId } from '@/lib/api-server';
 import { Providers } from './providers';
 import './globals.css';
 
 export const metadata: Metadata = { title: 'ROAMPASS' };
 
-// Inter 글꼴. next/font가 빌드할 때 받아서 우리 서버가 직접 준다 → 화면이 Google에 요청하지 않는다
-// variable로 CSS 변수(--font-inter)를 만들고, globals.css의 --font가 그 변수를 쓴다
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-inter' });
+// 글꼴: 본문은 Geist 하나, 주문번호·SIM 번호처럼 자리를 맞춰 읽는 번호만 같은 폭 글꼴(Geist Mono)
+// next/font가 빌드할 때 받아서 우리 서버가 직접 준다 → 화면이 Google에 요청하지 않는다
+const geist = Geist({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-geist' });
+const geistMono = Geist_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-geist-mono' });
 
-// 모든 화면의 틀. Server Component이고, Client Component인 Providers가 children을 감싸는 것은 허용된다
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// 모든 화면의 틀: 왼쪽 메뉴(서비스 표시, 내 아이디, 메뉴) + 오른쪽 작업 영역
+// Server Component다. 쿠키의 아이디를 읽어 아이디 입력칸에 넘긴다
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const userId = await getUserId();
+
   return (
-    <html lang="ko" className={inter.variable}>
+    <html lang="ko" className={`${geist.variable} ${geistMono.variable}`}>
       <body>
-        <header className="header">
-          <Link href="/" className="logo">
-            ROAMPASS
-          </Link>
-          <nav>
-            <Link href="/my-sims">내 SIM</Link>
-            <Link href="/admin">어드민</Link>
-          </nav>
-        </header>
-        <main className="main">
-          <Providers>{children}</Providers>
-        </main>
+        <div className="shell">
+          <SidebarNav
+            brand={
+              <Link href="/" className="brand">
+                <SimMark />
+                ROAMPASS
+              </Link>
+            }
+          >
+            <UserIdForm currentUserId={userId} />
+          </SidebarNav>
+          <main className="canvas">
+            <Providers>{children}</Providers>
+          </main>
+        </div>
       </body>
     </html>
   );

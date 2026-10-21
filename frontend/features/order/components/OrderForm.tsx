@@ -33,30 +33,35 @@ export function OrderForm({ plans, todayKst, disabled }: Props) {
         order.mutate();
       }}
     >
-      <label>
-        요금제{' '}
-        <select value={planId} onChange={(e) => setPlanId(Number(e.target.value))}>
+      <div className="field">
+        <label htmlFor="plan" className="field-label">
+          요금제
+        </label>
+        <select id="plan" value={planId} onChange={(e) => setPlanId(Number(e.target.value))}>
           {plans.map((plan) => (
             <option key={plan.id} value={plan.id}>
               {plan.country} {plan.days}일 {SIM_TYPE_LABEL[plan.simType]} · {plan.price.toLocaleString('ko-KR')}원
             </option>
           ))}
         </select>
-      </label>
-      <label>
-        여행 시작일(한국 날짜){' '}
+      </div>
+      <div className="field">
+        <label htmlFor="travel-start" className="field-label">
+          여행 시작일 (한국 날짜)
+        </label>
         <input
+          id="travel-start"
           type="date"
           value={travelStartDate}
           min={todayKst}
           onChange={(e) => setTravelStartDate(e.target.value)}
         />
-      </label>
+      </div>
       {/* 요청 중에는 버튼을 막아서 두 번 눌러 주문이 두 개 생기지 않게 한다 */}
       <button type="submit" className="btn-primary" disabled={disabled || order.isPending}>
         {order.isPending ? '주문 중...' : '주문하기'}
       </button>
-      {disabled && <p>먼저 위에서 아이디를 저장해 주세요.</p>}
+      {disabled && <p className="muted">메뉴에서 아이디를 먼저 저장해 주세요.</p>}
       {order.isError && <p className="error">{order.error.message}</p>}
     </form>
   );

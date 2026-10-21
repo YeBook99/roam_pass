@@ -1,3 +1,5 @@
+import type { Tone } from '@/lib/status-tone';
+
 // 백엔드 issue.dto.ProfileResponse와 1:1. 발급된 SIM 한 장의 정보
 // 설치 상태는 앞으로만 간다: ISSUED → QR_VIEWED → INSTALLED → ACTIVE → EXPIRED (docs/07)
 export type InstallStatus = 'ISSUED' | 'QR_VIEWED' | 'INSTALLED' | 'ACTIVE' | 'EXPIRED';
@@ -19,4 +21,12 @@ export const INSTALL_STATUS_LABEL: Record<InstallStatus, string> = {
   INSTALLED: '기기에 설치됨',
   ACTIVE: '사용 중',
   EXPIRED: '사용 기간 끝남',
+};
+
+export const INSTALL_STATUS_TONE: Record<InstallStatus, Tone> = {
+  ISSUED: 'neutral',
+  QR_VIEWED: 'neutral',
+  INSTALLED: 'positive',
+  ACTIVE: 'positive',
+  EXPIRED: 'neutral',
 };

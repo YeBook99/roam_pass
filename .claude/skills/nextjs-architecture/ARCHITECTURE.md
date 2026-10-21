@@ -44,13 +44,14 @@ frontend/
 │     ├─ server.ts               서버에서 부르는 조회 함수 (import 'server-only')
 │     ├─ client.ts               브라우저에서 부르는 함수 (폴링 조회, 버튼 요청)
 │     └─ components/             이 기능의 화면 조각. 브라우저용은 첫 줄에 'use client'
-├─ components/                   어느 기능에도 속하지 않는 조각 (KstTime, FreshnessBadge, UserIdForm)
+├─ components/                   어느 기능에도 속하지 않는 조각 (KstTime, FreshnessBadge, StatusPill, SimMark, SidebarNav, UserIdForm)
 └─ lib/                          기능을 모르는 도구
    ├─ api-error.ts               ApiError + 응답 처리 (ProblemDetail → code, detail)
    ├─ api-server.ts              서버용 fetch, 쿠키의 아이디 읽기 (import 'server-only')
    ├─ api-client.ts              브라우저용 fetch
    ├─ idempotency.ts             멱등키 만들기 (http에서도 동작)
    ├─ user.ts                    아이디 쿠키 이름, 쿠키 저장(브라우저 전용 saveUserId)
+   ├─ status-tone.ts             상태 표시 색의 종류(Tone) 타입만. 상태별 색 표는 각 기능 types.ts
    └─ time.ts                    UTC → KST 표시
 ```
 
@@ -101,7 +102,7 @@ Server Component ──fetch(API_INTERNAL_URL + '/api/...')──▶ Spring
 3. 에러는 `ApiError(status, code, detail)` 하나로 바뀐다. 백엔드 `ProblemDetail`의 `code`로 분기하고, 사용자에게는 `detail`(한글 메시지)을 보여 준다
    - 서버 페이지에서 404면 `notFound()`를 불러 `not-found.tsx`를 보여 준다
    - 그 밖에 서버에서 처리하지 못한 에러는 `app/error.tsx`가 보여 준다. 운영 빌드에서 Next는 서버 에러 메시지를 숨기고 `digest`(로그 추적 번호)만 넘기므로 고정 문구 + digest를 보여 준다. 사용자에게 이유를 알려야 하는 에러(결제 불가 등)는 페이지나 컴포넌트에서 `ApiError`를 직접 처리한다
-4. 사용자 식별: 첫 화면에서 입력한 아이디를 쿠키(`roampass_user`)에 두고, 서버는 `cookies()`(`getUserId`), 브라우저는 `document.cookie`로 읽어 `X-User-Id` 헤더에 붙인다. 아이디가 없는데 `/api/my/*`를 조회하려 하면 `serverGet`이 첫 화면(`/`)으로 보낸다(`redirect`). 헤더에는 한글을 넣을 수 없어서 아이디는 영문·숫자·`_-`만 받는다. 운영자 아이디(`X-Admin-Id`)는 조치 API를 만들 때 같은 방식으로 추가한다
+4. 사용자 식별: 왼쪽 메뉴 맨 위에서 입력한 아이디를 쿠키(`roampass_user`)에 두고, 서버는 `cookies()`(`getUserId`), 브라우저는 `document.cookie`로 읽어 `X-User-Id` 헤더에 붙인다. 아이디가 없는데 `/api/my/*`를 조회하려 하면 `serverGet`이 첫 화면(`/`)으로 보낸다(`redirect`). 헤더에는 한글을 넣을 수 없어서 아이디는 영문·숫자·`_-`만 받는다. 운영자 아이디(`X-Admin-Id`)는 조치 API를 만들 때 같은 방식으로 추가한다
 
 ### 5.3 폴링 (TanStack Query `useQuery`)
 - `initialData`에 서버가 준 첫 데이터를 넣는다
@@ -119,6 +120,7 @@ Server Component ──fetch(API_INTERNAL_URL + '/api/...')──▶ Spring
 1. 백엔드는 UTC ISO 문자열(`2026-05-08T15:20:00Z`)을 준다. **화면에 보일 때만** `lib/time.ts`의 `formatKst`로 바꾼다(CLAUDE.md §3-7)
 2. `toLocaleString()`을 시간대 없이 쓰지 않는다. 서버(UTC)와 브라우저(KST)가 다른 값을 그려 하이드레이션 에러가 난다
 3. "N초 전"처럼 **지금 시각에 따라 바뀌는 표시**는 Client Component에서 화면이 뜬 뒤(`useEffect`) 계산한다
+   - **예외: 사용 기간 막대**(`features/issue/components/UsagePeriodBar.tsx`)는 서버가 페이지를 그리는 순간의 시각(`Date.now()`)으로 남은 기간을 계산한다. 몇 초 단위로 바뀌는 값이 아니라 "일·시간 남음"이라 새로고침할 때만 바뀌어도 되고, 서버에서 한 번 그리면 화면이 뜰 때 숫자가 바뀌며 깜빡이지 않는다. 만료 시각은 백엔드가 준 `expiresAt`을 그대로 쓰고 직접 계산하지 않는다(CLAUDE.md §3-7)
 4. 날짜 입력(어드민 기간 필터)은 KST 날짜 문자열(`2026-05-09`) 그대로 보낸다. UTC 변환은 백엔드가 한다
 
 ## 7. URL 상태

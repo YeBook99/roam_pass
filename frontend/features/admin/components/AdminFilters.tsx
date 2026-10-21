@@ -48,11 +48,14 @@ export function AdminFilters({ current }: { current: Filters }) {
   }
 
   return (
-    <form onSubmit={search} className="card row">
+    <form onSubmit={search} className="card filters">
+      {/* 이름은 칸 위에 둔다. htmlFor와 id로 이름과 칸을 이어서 눌러도 칸이 선택된다 */}
       {SELECTS.map(({ key, label }) => (
-        <label key={key}>
-          {label}{' '}
-          <select value={filters[key] ?? ''} onChange={(e) => change(key, e.target.value)}>
+        <div key={key} className="field">
+          <label htmlFor={`filter-${key}`} className="field-label">
+            {label}
+          </label>
+          <select id={`filter-${key}`} value={filters[key] ?? ''} onChange={(e) => change(key, e.target.value)}>
             <option value="">전체</option>
             {OPTIONS[key].map((value) => (
               <option key={value} value={value}>
@@ -60,21 +63,34 @@ export function AdminFilters({ current }: { current: Filters }) {
               </option>
             ))}
           </select>
-        </label>
+        </div>
       ))}
       {/* 기간은 한국 날짜로 고른다. UTC 범위로 바꾸는 것은 백엔드가 한다 */}
-      <label>
-        주문일(KST) <input type="date" value={filters.from ?? ''} onChange={(e) => change('from', e.target.value)} />
-      </label>
-      <label>
-        ~ <input type="date" value={filters.to ?? ''} onChange={(e) => change('to', e.target.value)} />
-      </label>
-      <button type="submit" className="btn-primary">
-        조회
-      </button>
-      <button type="button" onClick={() => router.push('/admin')}>
-        초기화
-      </button>
+      <div className="field">
+        <label htmlFor="filter-from" className="field-label">
+          주문일(KST)
+        </label>
+        <input
+          id="filter-from"
+          type="date"
+          value={filters.from ?? ''}
+          onChange={(e) => change('from', e.target.value)}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="filter-to" className="field-label">
+          까지
+        </label>
+        <input id="filter-to" type="date" value={filters.to ?? ''} onChange={(e) => change('to', e.target.value)} />
+      </div>
+      <div className="row">
+        <button type="submit" className="btn-primary">
+          조회
+        </button>
+        <button type="button" onClick={() => router.push('/admin')}>
+          초기화
+        </button>
+      </div>
     </form>
   );
 }

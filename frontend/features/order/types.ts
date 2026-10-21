@@ -1,4 +1,5 @@
 import type { SimType } from '@/features/plan/types'; // 다른 기능은 types만 가져다 쓴다
+import type { Tone } from '@/lib/status-tone';
 
 // 백엔드 order.dto.OrderResponse와 1:1. 백엔드가 바뀌면 같이 고친다
 export type OrderStatus =
@@ -44,6 +45,21 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   REFUNDING: '환불 중',
   REFUNDED: '환불 완료',
   REFUND_FAILED: '환불 지연',
+};
+
+// 상태 표시 색. 진행 중은 노랑, 끝나고 정상은 초록, 사람이 봐야 하는 실패는 빨강
+export const ORDER_STATUS_TONE: Record<OrderStatus, Tone> = {
+  PENDING: 'warning',
+  EXPIRED: 'neutral',
+  PAID: 'warning',
+  ISSUING: 'warning',
+  ISSUED: 'positive',
+  PICKUP_READY: 'positive',
+  ACTIVATING: 'warning',
+  ISSUE_FAILED: 'negative',
+  REFUNDING: 'warning',
+  REFUNDED: 'neutral',
+  REFUND_FAILED: 'negative',
 };
 
 // 발급 대기 화면이 폴링을 멈추는 상태. 이 상태가 되면 더 기다려도 바뀌지 않는다 (docs/08 §4)
