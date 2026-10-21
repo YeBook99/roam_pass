@@ -57,7 +57,7 @@
 ## Q1. 왜 이 기술들을 골랐습니까? (필수)
 
 **30초 답변**
-> "백엔드는 써 본 적 있는 Java 17과 Spring Boot 3를 골랐습니다. Next.js가 처음이라 백엔드까지 새 기술을 쓰면 둘 다 설명을 못 할 것 같았습니다. ORM은 JPA를 쓰되, 중복 처리가 걸린 상태 변경은 네이티브 쿼리로 조건부 UPDATE를 직접 썼습니다. 비동기는 커밋 후 이벤트와 `@Async`로 바로 처리하고, 놓친 건 `@Scheduled`가 DB 상태를 보고 다시 처리하게 했습니다. DB는 회사에서 쓰고 `ON CONFLICT`와 부분 인덱스가 있는 PostgreSQL을 골랐고, 프론트는 공식 튜토리얼이 기준으로 삼는 App Router를 썼습니다. 배포는 서버가 잠들지 않는 AWS EC2 한 대에 docker compose로 DB까지 함께 올렸습니다."
+> "백엔드는 써 본 적 있는 Java 17과 Spring Boot 3를 골랐습니다. Next.js가 처음이라 백엔드까지 새 기술을 쓰면 둘 다 설명을 못 할 것 같았습니다. ORM은 JPA를 쓰되, 중복 처리가 걸린 상태 변경은 네이티브 쿼리로 조건부 UPDATE를 직접 썼습니다. 비동기는 커밋 후 이벤트와 `@Async`로 바로 처리하고, 놓친 건 `@Scheduled`가 DB 상태를 보고 다시 처리하게 했습니다. DB는 회사에서 쓰고 `ON CONFLICT`와 부분 인덱스가 있는 PostgreSQL을 골랐고, 프론트는 공식 튜토리얼이 기준으로 삼는 App Router를 썼습니다. 배포는 서버가 잠들지 않는 AWS EC2와 RDS로 했습니다."
 
 **왜 그렇게 했나** — 요약표 (상세 [02_기술선택_ADR](02_기술선택_ADR.md))
 | 영역 | 선택 | 버린 것과 이유 |
@@ -69,7 +69,7 @@
 | DB | PostgreSQL | MySQL: 부분 유니크 인덱스 없음 / H2: 운영과 동작이 다름 |
 | 마이그레이션 | Flyway | ddl-auto: 실행된 DDL이 안 보임 |
 | 테스트 | Testcontainers | H2: 동시성 테스트가 거짓으로 통과할 수 있음 |
-| 배포 | EC2 한 대 + docker compose(DB 컨테이너) | Render 무료: 15분 후 잠들어 스케줄러 정지 / RDS: 리소스·과금 확인이 늘고 로컬과 구성이 달라짐 |
+| 배포 | EC2 + RDS | Render 무료: 15분 후 잠들어 스케줄러 정지 |
 | PR 화면 캡처 | Playwright MCP | 수동 캡처: before·after 조건이 매번 다름 |
 
 **문서·코드 위치**: `docs/02`, `backend/build.gradle`, `frontend/package.json`
@@ -269,7 +269,7 @@
 | `@TransactionalEventListener` | | | |
 | Testcontainers | | | |
 | PostgreSQL `ON CONFLICT` | | | |
-| AWS EC2 | | | |
+| AWS EC2 / RDS | | | |
 | Caddy / sslip.io | | | |
 
 **AI가 틀린 것을 잡아낸 순간** (평가 항목. 실제 사례만 쓴다)
@@ -359,7 +359,7 @@
 ## I9. 배포한 곳에서 트래픽이 10배가 되면 무엇부터 손봐야 합니까?
 
 **30초 답변**
-> "추측보다 먼저 CloudWatch에서 CPU 크레딧, 메모리, DB 커넥션 수를 보겠습니다. 예상하기로는 t3.micro가 먼저 터집니다. t 계열은 CPU 크레딧이 떨어지면 느려지고, 1GB 메모리를 JVM, Node, PostgreSQL이 나눠 쓰고 있기 때문입니다. 그래서 인스턴스를 키우고 DB와 프론트를 분리하는 게 먼저입니다. 다음은 DB 커넥션입니다. 2초 폴링이 10배가 되면 조회가 많아지니 폴링 간격을 늘리겠습니다. 그다음은 스케줄러를 API 서버와 분리하고, 서버가 여러 대가 되면 ShedLock을 넣겠습니다."
+> "추측보다 먼저 CloudWatch에서 CPU 크레딧, 메모리, RDS 커넥션 수를 보겠습니다. 예상하기로는 t3.micro가 먼저 터집니다. t 계열은 CPU 크레딧이 떨어지면 느려지고, 1GB 메모리를 JVM과 Node가 나눠 쓰고 있기 때문입니다. 그래서 인스턴스를 키우고 프론트를 분리하는 게 먼저입니다. 다음은 DB 커넥션입니다. 2초 폴링이 10배가 되면 조회가 많아지니 폴링 간격을 늘리겠습니다. 그다음은 스케줄러를 API 서버와 분리하고, 서버가 여러 대가 되면 ShedLock을 넣겠습니다."
 
 - 위치: [10 §6](10_배포_계획.md)
 
