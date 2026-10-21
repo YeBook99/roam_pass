@@ -1,16 +1,42 @@
 /* UI 완성도는 평가 항목이 아니다. 읽기 쉬운 정도만 맞춘다 */
-body { margin: 0; font-family: system-ui, sans-serif; color: #222; }
-a { color: #1a5fb4; }
-.header { display: flex; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid #ddd; }
+/* 테마: Midnight Galaxy (theme-factory 스킬). 색은 아래 변수에만 두고, 나머지 규칙은 변수를 가져다 쓴다
+   → 테마를 바꾸려면 :root 안의 값만 고치면 된다 */
+:root {
+  --deep-purple: #2b1e3e; /* 바탕 */
+  --cosmic-blue: #4a4e8f; /* 버튼, 강조 면 */
+  --lavender: #a490c2; /* 링크, 테두리, 보조 글자 */
+  --silver: #e6e6fa; /* 본문 글자 */
+
+  --surface: #3a2b52; /* 표 머리·코드 칸처럼 바탕보다 조금 밝은 면 (deep-purple을 밝게) */
+  --line: rgba(164, 144, 194, 0.3); /* 표 줄, 구분선 (lavender를 흐리게) */
+  --error: #ff9bb0; /* 어두운 바탕에서 읽히는 빨강 */
+  --warning-bg: #f2d675; /* 60초 넘은 데이터 배지 */
+  --warning-text: #2b1e3e;
+
+  /* FreeSans는 웹 폰트를 따로 불러오지 않는다. 없으면 비슷한 기본 글꼴로, 한글은 시스템 한글 글꼴로 보인다 */
+  --font: FreeSans, 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
+}
+
+body { margin: 0; font-family: var(--font); background: var(--deep-purple); color: var(--silver); }
+h1, h2 { font-weight: 700; }
+a { color: var(--lavender); }
+a:hover { color: var(--silver); }
+.header { display: flex; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.header a { font-weight: 700; text-decoration: none; }
 .header nav { display: flex; gap: 16px; }
 .main { max-width: 960px; margin: 0 auto; padding: 24px; }
 table { border-collapse: collapse; width: 100%; }
-th, td { border-bottom: 1px solid #eee; padding: 6px 8px; text-align: left; font-size: 14px; }
-button { padding: 8px 16px; cursor: pointer; }
+th, td { border-bottom: 1px solid var(--line); padding: 6px 8px; text-align: left; font-size: 14px; }
+th { background: var(--surface); color: var(--silver); } /* lavender 글자는 이 면에서 대비가 4.5:1로 빠듯해서 silver */
+button { padding: 8px 16px; cursor: pointer; font-family: var(--font); color: var(--silver); background: var(--cosmic-blue); border: 1px solid var(--lavender); border-radius: 4px; }
+button:hover:not(:disabled) { background: var(--lavender); color: var(--deep-purple); }
 button:disabled { cursor: default; opacity: 0.6; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #eef; font-size: 12px; }
-.badge-stale { background: #fff3c4; }
-.error { color: #c01c28; }
+/* 입력칸·선택칸도 어두운 바탕에 맞춘다. 브라우저 기본은 흰 칸이라 눈에 튄다 */
+input, select { font-family: var(--font); color: var(--silver); background: var(--surface); border: 1px solid var(--lavender); border-radius: 4px; padding: 4px 6px; }
+input[type='date'] { color-scheme: dark; } /* 달력 아이콘·팝업을 어두운 모양으로 */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; background: var(--cosmic-blue); color: var(--silver); font-size: 12px; }
+.badge-stale { background: var(--warning-bg); color: var(--warning-text); }
+.error { color: var(--error); }
 .stack { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.code { display: block; padding: 8px; background: #f5f5f5; word-break: break-all; }
+.code { display: block; padding: 8px; background: var(--surface); border: 1px solid var(--line); word-break: break-all; }
