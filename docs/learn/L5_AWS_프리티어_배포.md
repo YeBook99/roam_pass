@@ -106,7 +106,7 @@ scp -i roampass-key.pem deploy/Caddyfile deploy/prod.env.example ubuntu@<IP>:~/r
 **이유**: Gradle 빌드와 Next.js 빌드는 메모리를 많이 쓴다. 1GB 서버에서 빌드하면 멈추거나 매우 느리다.
 
 - **CD가 한다**: main에 머지되면 `.github/workflows/cd.yml`이 `linux/amd64` 이미지를 빌드해 GHCR(`ghcr.io/yebook99/roampass-backend`, `-frontend`)에 올린다
-- GHCR 패키지는 처음에 **비공개**다. 둘 중 하나를 한다
+- GHCR 패키지는 처음에 **비공개**다. **저장소의 공개 범위와는 따로**라서(첫 배포 때 저장소만 공개로 바꾸고 막혔다), 패키지 설정 화면(`https://github.com/users/<계정>/packages/container/<이름>/settings`) 맨 아래에서 바꾼다. 둘 중 하나를 한다
   - GitHub → Packages → 각 패키지 → Package settings → **Public**으로 바꾸기 (시크릿이 이미지에 없으므로 공개해도 된다)
   - 또는 EC2에서 `docker login ghcr.io` (GitHub 토큰, 권한 `read:packages`만)
 

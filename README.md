@@ -18,10 +18,13 @@ docker compose up -d --build --wait
 
 정리: `docker compose down -v`
 
-## 배포 (준비 중)
+## 배포
 
-AWS EC2 한 대에 `docker-compose.prod.yml`로 Caddy(HTTPS), 화면, 서버, PostgreSQL을 함께 띄웁니다. DB도 컨테이너이고 RDS는 쓰지 않습니다(ADR-12).
-설정 파일은 준비했고 로컬에서 같은 구성으로 확인했습니다. **아직 EC2에 올리지 않았습니다.** 절차는 [L5 배포 가이드](docs/learn/L5_AWS_프리티어_배포.md)에 있습니다.
+- **화면**: https://43-200-178-3.sslip.io (어드민: https://43-200-178-3.sslip.io/admin)
+- **백엔드**: 같은 주소의 `/api/...` (예: https://43-200-178-3.sslip.io/api/plans)
+- AWS EC2 한 대(Ubuntu 24.04, 메모리 1GB + 스왑 2GB)에 `docker-compose.prod.yml`로 Caddy(HTTPS), 화면, 서버, PostgreSQL을 함께 띄웁니다. DB도 컨테이너이고 RDS는 쓰지 않습니다(ADR-12)
+- 모의 공급사 콜백은 공개 주소(`APP_PUBLIC_BASE_URL`)로 돌아옵니다. 배포 직후 결제 한 건을 넣어 `ISSUING → ISSUED · SUPPLIER · CALLBACK`이 타임라인에 찍히는 것을 확인했습니다
+- 절차와 막혔던 지점은 [L5 배포 가이드](docs/learn/L5_AWS_프리티어_배포.md), 결정과 근거는 [10 배포 계획](docs/10_배포_계획.md)에 있습니다
 
 ## 현재 한계 (작업 중, 보완 예정)
 
