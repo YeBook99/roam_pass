@@ -22,10 +22,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -121,7 +123,9 @@ public class OrderService {
     // 발급 기능용 tx2: 공급사가 접수하며 준 supplierOrderNo를 저장한다
     @Transactional
     public void recordSupplierOrderNo(Long orderId, String supplierOrderNo) {
-        orderRepository.recordSupplierOrderNo(orderId, supplierOrderNo, Instant.now(clock));
+        if (orderRepository.recordSupplierOrderNo(orderId, supplierOrderNo, Instant.now(clock)) == 0) {
+            log.warn("이미 다른 공급사 접수번호가 있는 주문 orderId={}, supplierOrderNo={}", orderId, supplierOrderNo);
+        }
     }
 
     // 발급 콜백이 어느 주문 것인지 찾는다. 먼저 공급사 접수번호로 찾고,
@@ -133,7 +137,7 @@ public class OrderService {
             return Optional.of(bySupplier.get().getId());
         }
         Optional<SimOrder> byOrderNo = orderRepository.findByOrderNo(orderNo);
-        byOrderNo.ifPresent(order -> orderRepository.recordSupplierOrderNo(order.getId(), supplierOrderNo, Instant.now(clock)));
+        byOrderNo.ifPresent(order -> recordSupplierOrderNo(order.getId(), supplierOrderNo));
         return byOrderNo.map(SimOrder::getId);
     }
 

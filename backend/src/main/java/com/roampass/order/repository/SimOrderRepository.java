@@ -36,8 +36,11 @@ public interface SimOrderRepository extends JpaRepository<SimOrder, Long> {
     int recordIssueRequestedAt(@Param("id") long id, @Param("now") Instant now);
 
     @Modifying(clearAutomatically = true)
-    @Query(value = "UPDATE sim_order SET supplier_order_no = :supplierOrderNo, updated_at = :now WHERE id = :id",
-            nativeQuery = true)
+    // 이미 다른 접수번호가 들어 있으면 덮어쓰지 않는다 (반환값 0)
+    @Query(value = """
+            UPDATE sim_order SET supplier_order_no = :supplierOrderNo, updated_at = :now
+            WHERE id = :id AND (supplier_order_no IS NULL OR supplier_order_no = :supplierOrderNo)
+            """, nativeQuery = true)
     int recordSupplierOrderNo(@Param("id") long id, @Param("supplierOrderNo") String supplierOrderNo,
                               @Param("now") Instant now);
 }

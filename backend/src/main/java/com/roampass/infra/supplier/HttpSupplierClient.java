@@ -37,6 +37,9 @@ public class HttpSupplierClient implements SupplierClient {
         try {
             String raw = new String(body, StandardCharsets.UTF_8);
             IssueCallbackMessage m = objectMapper.readValue(body, IssueCallbackMessage.class);
+            if (m.supplierOrderNo() == null || m.orderNo() == null || m.iccid() == null) {
+                return Optional.empty();   // 필수 값이 빠진 콜백은 읽을 수 없는 본문으로 본다
+            }
             return Optional.of(new SupplierIssueCallback(m.supplierOrderNo(), m.orderNo(), m.iccid(), m.activationCode(), raw));
         } catch (IOException e) {
             return Optional.empty();
