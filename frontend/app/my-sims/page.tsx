@@ -18,32 +18,34 @@ export default async function MySimsPage() {
           아직 주문이 없습니다. <Link href="/">요금제 보러 가기</Link>
         </p>
       ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>주문번호</th>
-              <th>종류</th>
-              <th>상태</th>
-              <th>금액</th>
-              <th>주문 시각</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.orderNo}>
-                <td>
-                  <Link href={`/my-sims/${order.orderNo}`}>{order.orderNo}</Link>
-                </td>
-                <td>{SIM_TYPE_LABEL[order.simType]}</td>
-                <td>{ORDER_STATUS_LABEL[order.status]}</td>
-                <td>{order.amount.toLocaleString('ko-KR')}원</td>
-                <td>
-                  <KstTime iso={order.createdAt} />
-                </td>
+        <section className="card">
+          <table>
+            <thead>
+              <tr>
+                <th>주문번호</th>
+                <th>종류</th>
+                <th>상태</th>
+                <th>금액</th>
+                <th>주문 시각</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.orderNo}>
+                  <td>
+                    <Link href={`/my-sims/${order.orderNo}`}>{order.orderNo}</Link>
+                  </td>
+                  <td>{SIM_TYPE_LABEL[order.simType]}</td>
+                  <td>{ORDER_STATUS_LABEL[order.status]}</td>
+                  <td>{order.amount.toLocaleString('ko-KR')}원</td>
+                  <td>
+                    <KstTime iso={order.createdAt} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
       )}
     </div>
   );

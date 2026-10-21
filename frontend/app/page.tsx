@@ -15,33 +15,39 @@ export default async function HomePage() {
   return (
     <div className="stack">
       <h1>여행 데이터 SIM</h1>
-      <UserIdForm currentUserId={userId} />
+      <section className="card">
+        <UserIdForm currentUserId={userId} />
+      </section>
 
-      <table>
-        <thead>
-          <tr>
-            <th>국가</th>
-            <th>기간</th>
-            <th>데이터</th>
-            <th>종류</th>
-            <th>가격</th>
-          </tr>
-        </thead>
-        <tbody>
-          {plans.map((plan) => (
-            <tr key={plan.id}>
-              <td>{plan.country}</td>
-              <td>{plan.days}일</td>
-              <td>{Math.round(plan.dataMb / 1024)}GB</td>
-              <td>{SIM_TYPE_LABEL[plan.simType]}</td>
-              <td>{plan.price.toLocaleString('ko-KR')}원</td>
+      <section className="card">
+        <table>
+          <thead>
+            <tr>
+              <th>국가</th>
+              <th>기간</th>
+              <th>데이터</th>
+              <th>종류</th>
+              <th>가격</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {plans.map((plan) => (
+              <tr key={plan.id}>
+                <td>{plan.country}</td>
+                <td>{plan.days}일</td>
+                <td>{Math.round(plan.dataMb / 1024)}GB</td>
+                <td>{SIM_TYPE_LABEL[plan.simType]}</td>
+                <td>{plan.price.toLocaleString('ko-KR')}원</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
-      <h2>주문하기</h2>
-      <OrderForm plans={plans} todayKst={todayKst()} disabled={!userId} />
+      <section className="card stack">
+        <h2>주문하기</h2>
+        <OrderForm plans={plans} todayKst={todayKst()} disabled={!userId} />
+      </section>
     </div>
   );
 }

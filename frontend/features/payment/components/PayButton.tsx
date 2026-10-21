@@ -30,7 +30,7 @@ export function PayButton({ orderNo }: { orderNo: string }) {
   return (
     <div className="stack">
       {/* 요청 중에는 버튼을 막는다. 그래도 두 번 가면 같은 멱등키라 백엔드가 한 건으로 처리한다 */}
-      <button type="button" disabled={pay.isPending} onClick={() => pay.mutate()}>
+      <button type="button" className="btn-primary" disabled={pay.isPending} onClick={() => pay.mutate()}>
         {pay.isPending ? '결제 중...' : '결제하기'}
       </button>
       {declined && !pay.isPending && <p className="error">결제가 거절되었습니다. 다시 시도해 주세요.</p>}

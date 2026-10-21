@@ -53,7 +53,7 @@ export function OrderForm({ plans, todayKst, disabled }: Props) {
         />
       </label>
       {/* 요청 중에는 버튼을 막아서 두 번 눌러 주문이 두 개 생기지 않게 한다 */}
-      <button type="submit" disabled={disabled || order.isPending}>
+      <button type="submit" className="btn-primary" disabled={disabled || order.isPending}>
         {order.isPending ? '주문 중...' : '주문하기'}
       </button>
       {disabled && <p>먼저 위에서 아이디를 저장해 주세요.</p>}

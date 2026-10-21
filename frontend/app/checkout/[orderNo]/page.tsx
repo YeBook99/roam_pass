@@ -16,16 +16,18 @@ export default async function CheckoutPage({ params }: { params: Promise<{ order
   return (
     <div className="stack">
       <h1>결제</h1>
-      <p>주문번호 {order.orderNo}</p>
-      <p>금액 {order.amount.toLocaleString('ko-KR')}원</p>
-      <p>
-        결제 기한 <KstTime iso={order.expiresAt} />
-      </p>
-      {order.status === 'PENDING' ? (
-        <PayButton orderNo={order.orderNo} />
-      ) : (
-        <p>이미 처리된 주문입니다 ({ORDER_STATUS_LABEL[order.status]})</p>
-      )}
+      <section className="card stack">
+        <p className="muted">주문번호 {order.orderNo}</p>
+        <p>금액 {order.amount.toLocaleString('ko-KR')}원</p>
+        <p>
+          결제 기한 <KstTime iso={order.expiresAt} />
+        </p>
+        {order.status === 'PENDING' ? (
+          <PayButton orderNo={order.orderNo} />
+        ) : (
+          <p>이미 처리된 주문입니다 ({ORDER_STATUS_LABEL[order.status]})</p>
+        )}
+      </section>
     </div>
   );
 }

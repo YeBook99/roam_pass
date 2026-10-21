@@ -45,7 +45,7 @@ export function IssueStatusPoller({ initial }: { initial: Order }) {
   const finished = ISSUE_FINAL_STATUSES.includes(order.status);
 
   return (
-    <section className="stack">
+    <section className="card stack">
       <p>
         현재 상태: <strong>{ORDER_STATUS_LABEL[order.status]}</strong>
       </p>
