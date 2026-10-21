@@ -209,7 +209,9 @@
 - 상태는 **앞으로만** 간다. 늦게 온 옛날 신호를 무시할 수 있고, 환불 판단이 안전한 쪽으로 기운다
 - 신호가 틀렸을 때 사용자는 "마지막 확인: N분 전"과 [다시 확인] 버튼을 본다. 운영자는 타임라인에서 **신호 출처와 발생/기록 시각 두 개**를 보고, 모순은 `SIGNAL_CONFLICT` 이상 건으로 본다
 
-**문서·코드 위치**: [07_설치추적_만료](07_설치추적_만료.md), `InstallPollingScheduler`, `InstallStatus.rank()`, `RefundEligibilityService`
+**지금 구현된 범위 (기본 흐름)**: QR 열람 기록, 공급사 상태 조회로 INSTALLED·ACTIVE 반영(앞으로만), 개통 시 만료일 계산, 개통 전 SIM 전체를 1분마다 조회, 사용자 [다시 확인], 만료 시각이 지나면 EXPIRED. **아직 없는 것**: 공급사 설치 콜백 수신, SIM별로 조회 주기를 다르게 하는 선택적 폴링, DELETED, 환불 직전 동기 조회(보완 단계). 인터뷰 때까지 못 만들면 "지금은 1분마다 전부 조회하고, 위 표처럼 나누는 게 다음 단계"라고 그대로 말한다
+
+**문서·코드 위치**: [07_설치추적_만료](07_설치추적_만료.md), `InstallTrackingService`(viewQr·refresh·expireDue), `InstallPollingScheduler`, `InstallStatus.canMoveTo()`, `ExpiryCalculator`, `RefundEligibilityService`(보완 단계)
 
 **예상 꼬리질문**
 - Q: 콜백은 INSTALLED였는데 조회는 RELEASED면? → A: "되돌리지 않고 SIGNAL_CONFLICT로 남겨 운영자가 보게 합니다. 환불 쪽으로는 보수적으로 판단하는 게 맞다고 봤습니다."
