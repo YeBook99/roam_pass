@@ -44,7 +44,7 @@ AWS 무료 정책은 **계정을 만든 날짜**에 따라 다르다.
 
 ```
 [인터넷] ──443/80──▶ [EC2 보안그룹: 22(내 IP), 80, 443]
-                     EC2 (Amazon Linux 2023, t3.micro 또는 t2.micro, swap 2GB)
+                     EC2 (Ubuntu 24.04, t3.micro 또는 t2.micro, swap 2GB)
                      └ docker compose -f docker-compose.prod.yml
                         ├ caddy     :80/:443 → HTTPS, 라우팅 (밖으로 열린 유일한 컨테이너)
                         ├ frontend  :3000 (Next.js standalone)
@@ -62,43 +62,44 @@ AWS 무료 정책은 **계정을 만든 날짜**에 따라 다르다.
 | `roampass-ec2-sg` | SSH 22: **내 IP만** / HTTP 80: 0.0.0.0/0 / HTTPS 443: 0.0.0.0/0 | 80은 Let's Encrypt 인증서 발급과 HTTPS 리다이렉트에 필요 |
 
 ### 4.2 EC2 만들기
-1. EC2 → 인스턴스 시작 → **Amazon Linux 2023**
+1. EC2 → 인스턴스 시작 → **Ubuntu 24.04** (또는 Amazon Linux 2023: 그때는 계정이 `ec2-user`, 설치는 `dnf`)
 2. 인스턴스 유형: "Free tier eligible" 표시가 있는 `t3.micro` 또는 `t2.micro`
 3. 키 페어 생성(`roampass-key.pem`). 다운로드한 파일은 **저장소 폴더 밖에** 보관한다
 4. 네트워크: 퍼블릭 IP 자동 할당 **활성화**, 보안 그룹 `roampass-ec2-sg`
 5. 스토리지 20~30GB gp3 (DB 데이터도 여기에 쌓인다)
 
 ### 4.3 EC2 초기 설정 (SSH 접속 후)
+
+실제로 만든 서버는 **Ubuntu 24.04**(x86_64, 메모리 911MB, 디스크 8GB)다. 접속 계정은 `ubuntu`다(Amazon Linux라면 `ec2-user`).
 ```bash
-ssh -i roampass-key.pem ec2-user@<EC2 퍼블릭 IP>
+ssh -i roampass-key.pem ubuntu@<EC2 퍼블릭 IP>
 
-# Docker, git 설치
-sudo dnf install -y docker git
+# Docker와 compose 플러그인: Ubuntu 공식 저장소의 패키지로 설치한다 (바이너리를 직접 내려받지 않는다)
+sudo apt-get update
+sudo apt-get install -y docker.io docker-compose-v2
 sudo systemctl enable --now docker
-sudo usermod -aG docker ec2-user        # 다시 로그인해야 적용됨
-
-# docker compose 플러그인 (AL2023 기본 저장소에 없음 → 바이너리 직접 설치)
-sudo mkdir -p /usr/local/lib/docker/cli-plugins
-sudo curl -SL https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64 \
-     -o /usr/local/lib/docker/cli-plugins/docker-compose
-sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+sudo usermod -aG docker ubuntu          # 다시 로그인해야 적용됨
 docker compose version
 
 # 스왑 2GB (메모리 1GB 보완: JVM + Node + PostgreSQL이 함께 돈다)
-sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 free -h
 
+# 설치 찌꺼기 정리 (8GB 디스크라 아껴야 한다)
+sudo apt-get clean
+
 # 앱 폴더. 저장소가 private이라 git clone은 하지 않는다
 mkdir -p ~/roampass/deploy
 ```
+> 디스크 8GB 중 OS·Docker·스왑을 빼면 약 2.5GB가 남는다(2026-10-22 실제 값). 이미지 4개(약 1~1.5GB)는 들어가지만 새 이미지로 바꿀 때 빠듯하다. 콘솔 → EC2 → 볼륨 → "볼륨 수정"으로 20GB까지 늘리면 여유가 생긴다(서버를 끄지 않고 늘린 뒤 `sudo growpart /dev/nvme0n1 1 && sudo resize2fs /dev/nvme0n1p1`).
 
 설정 파일 3개(`docker-compose.prod.yml`, `deploy/Caddyfile`, `deploy/prod.env.example`)는 **내 PC에서 scp로** 보낸다. 이후 배포부터는 CD가 같은 방식으로 배포하는 커밋의 파일을 보낸다.
 ```bash
 # 내 PC의 저장소 루트에서 (main 브랜치)
-scp -i roampass-key.pem docker-compose.prod.yml ec2-user@<IP>:~/roampass/
-scp -i roampass-key.pem deploy/Caddyfile deploy/prod.env.example ec2-user@<IP>:~/roampass/deploy/
+scp -i roampass-key.pem docker-compose.prod.yml ubuntu@<IP>:~/roampass/
+scp -i roampass-key.pem deploy/Caddyfile deploy/prod.env.example ubuntu@<IP>:~/roampass/deploy/
 ```
 
 ### 4.4 이미지는 EC2에서 빌드하지 않는다
