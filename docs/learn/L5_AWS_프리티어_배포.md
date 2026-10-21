@@ -214,6 +214,8 @@ curl -s https://<SITE_DOMAIN>/actuator/health           # (노출했다면) UP
 
 ## 8. (가산점) push하면 배포까지
 
+> 2026-10-22 현재 자동 배포는 없다(`cd.yml`을 지웠다). 아래는 다시 만들 때 참고할 흐름이다
+
 GitHub Actions 흐름은 이렇다.
 `test → docker buildx (linux/amd64) → GHCR push → SSH로 EC2 접속 → docker compose pull && up -d`
 

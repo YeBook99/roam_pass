@@ -36,7 +36,8 @@ fix/...           ●───●
 | 워크플로 | 언제 | 하는 일 |
 |---|---|---|
 | `ci.yml` | **PR이 develop·main에 머지된 뒤(push)에만** | 규칙 검사 → 백엔드 테스트 → 프론트 빌드 |
-| `cd.yml` | main push (릴리스 PR 머지) | 이미지 빌드 → GHCR push → (승인 후) EC2 배포 → 헬스 체크 |
+
+자동 배포(CD)는 **없다**. 2026-10-22에 배포를 처음부터 다시 하기로 하면서 `cd.yml`을 지웠다. 배포 방식이 정해지면 그때 다시 정한다
 
 ### CI job 구성
 ```
@@ -100,23 +101,14 @@ git push -u origin <작업 브랜치>
 
 ### 4.4 Settings → Actions → General
 - [ ] Actions permissions: Allow all actions(또는 GitHub·verified 작성자만)
-- 워크플로 파일에 필요한 권한(CI는 `contents: read`, CD는 `packages: write`)을 직접 선언했으므로 기본 토큰 권한은 read-only여도 된다
+- 워크플로 파일에 필요한 권한(CI는 `contents: read`)을 직접 선언했으므로 기본 토큰 권한은 read-only여도 된다
 
-### 4.5 Settings → Secrets and variables → Actions (배포할 때)
+### 4.5 Settings → Secrets and variables → Actions
 | 종류 | 이름 | 값 |
 |---|---|---|
 | Variable | `RUNNER_LABELS` | (선택) `["self-hosted","linux","roampass"]` |
-| Variable | `DEPLOY_ENABLED` | EC2 준비 후 `true` |
-| Variable | `SITE_DOMAIN` | 예: `3-35-12-34.sslip.io` |
-| Secret | `EC2_HOST` | EC2 퍼블릭 IP |
-| Secret | `EC2_SSH_KEY` | `roampass-key.pem` 내용 전체 |
 
-### 4.6 Settings → Environments → `production`
-- [ ] Required reviewers에 본인 추가 → main 머지 후 배포 직전에 **승인 버튼**을 눌러야 배포된다(수동 게이트)
-
-### 4.7 EC2 쪽 (L5와 연결)
-- `docker-compose.prod.yml`의 이미지 태그를 `${IMAGE_TAG:-latest}`로 둔다. CD가 커밋 SHA 태그로 배포하므로 어떤 버전이 떠 있는지 알 수 있고 롤백도 쉽다
-- EC2에서 GHCR 이미지를 pull하려면 `docker login ghcr.io`(read:packages 토큰)를 한 번 해 둔다. 또는 패키지를 public으로 둔다
+배포용 비밀 값(서버 주소, 접속 키)은 자동 배포가 없어서 지금은 넣지 않는다
 
 ## 5. PR과 CI 순서 (매 PR마다)
 
