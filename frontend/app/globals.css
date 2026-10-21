@@ -1,28 +1,30 @@
 /* UI 완성도는 평가 항목이 아니다. 읽기 쉬운 정도만 맞춘다 */
-/* 디자인 레퍼런스: Seline Analytics (styles.refero.design). 따뜻한 종이색 바탕 + 흑백 글자 + 하늘색 강조 하나
+/* 모양(카드, 알약 버튼, 여백, 글꼴): Seline Analytics 레퍼런스 (styles.refero.design)
+   색: Midnight Galaxy 테마 (theme-factory 스킬) — Deep Purple #2b1e3e, Cosmic Blue #4a4e8f, Lavender #a490c2, Silver #e6e6fa
    색·모양 값은 아래 :root 변수에만 두고, 나머지 규칙은 변수를 가져다 쓴다 → 테마를 바꾸려면 변수만 고친다 */
 :root {
-  --canvas: #fafaf9; /* 페이지 바탕 (Stone Canvas) */
-  --surface: #ffffff; /* 카드·메뉴·입력칸 */
-  --border: #e8e6e5; /* 카드·메뉴의 가는 테두리 */
-  --border-strong: #d6d3d1; /* 입력칸 테두리 */
-  --text: #0c0a09; /* 제목·본문 (Ink Black) */
-  --text-muted: #78716c; /* 보조 글자·메뉴 링크 (Warm Gray) */
-  --accent: #3ba6f1; /* 강조 버튼·포커스 (Cyan Signal). 화면마다 강조 버튼은 하나만
-                       흰 글자는 이 위에서 대비 2.65:1이라 읽기 어려워서 강조 버튼 글자는 검정(--text, 7.4:1)으로 쓴다 */
-  --accent-edge: #3398e1; /* 강조 버튼 테두리 */
-  --accent-text: #1f6fb0; /* 흰 바탕 위 강조 글자. 레퍼런스의 #3398e1은 대비가 3.3:1이라 더 진하게 */
-  --accent-wash: #c1e1f7; /* 옅은 하늘색 면 (배지) */
-  --badge-text: #0c4a7a; /* 배지 글자. 하늘색 면 위에서 대비 4.5:1 이상이 되게 진하게 */
-  --error: #b42318;
-  --warning-bg: #fef3c7;
-  --warning-text: #92400e;
+  color-scheme: dark; /* 날짜 선택·선택칸 같은 브라우저 기본 부품도 어두운 모양으로 */
+
+  --canvas: #2b1e3e; /* 페이지 바탕 (Deep Purple) */
+  --surface: #35284c; /* 카드·메뉴·입력칸. 바탕보다 조금 밝은 보라 */
+  --border: #4a3d63; /* 카드·메뉴의 가는 테두리 (Lavender를 바탕에 흐리게 섞은 색) */
+  --border-strong: #6a5a86; /* 입력칸 테두리 */
+  --text: #e6e6fa; /* 제목·본문 (Silver). 바탕 위 대비 12.6:1 */
+  --text-muted: #a490c2; /* 보조 글자·메뉴 링크 (Lavender). 카드 위 대비 4.7:1 */
+  --accent: #4a4e8f; /* 강조 버튼 (Cosmic Blue). 화면마다 강조 버튼은 하나만. 글자는 Silver(--text, 6.1:1) */
+  --accent-edge: #5a5fa8; /* 강조 버튼 테두리·hover (Silver 글자와 4.7:1) */
+  --accent-text: #c9bce0; /* 링크 hover처럼 강조된 글자 */
+  --accent-wash: #4a4e8f; /* 배지 면 */
+  --badge-text: #e6e6fa; /* 배지 글자 (6.1:1) */
+  --error: #ff9bb0; /* 어두운 바탕에서 읽히는 빨강 (6.8:1) */
+  --warning-bg: #f2d675; /* 60초 넘은 데이터 배지 */
+  --warning-text: #2b1e3e;
 
   --radius-pill: 9999px; /* 버튼·배지 */
   --radius-card: 10px;
   --radius-input: 6px;
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.05);
-  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.25); /* 어두운 바탕이라 그림자를 조금 진하게 */
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.2);
 
   /* --font-inter는 layout.tsx에서 next/font가 만들어 준다. 한글은 Inter에 없어서 시스템 한글 글꼴로 보인다 */
   --font: var(--font-inter), system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
