@@ -61,7 +61,7 @@
 구현하면서 **실제로 실행해 확인한 명령만** 여기에 추가한다.
 
 ```bash
-cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend, 모의 PG 켜짐)
+cp .env.example .env && docker compose up -d --build --wait   # 전체 기동 (PostgreSQL + backend :8080 + frontend :3000, 모의 PG 켜짐)
 curl localhost:8080/actuator/health                          # {"status":"UP"}
 curl localhost:3000/api/plans                                # 프론트(3000) → rewrites → Spring 연결 확인
 docker compose down -v                                       # 정리 (DB 볼륨까지 삭제). 마이그레이션을 고쳤으면 다시 띄우기 전에 필요

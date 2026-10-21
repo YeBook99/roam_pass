@@ -100,6 +100,7 @@ Server Component ──fetch(API_INTERNAL_URL + '/api/...')──▶ Spring
    - 이유: 사용자 헤더, 캐시 끄기, 에러 해석을 한 곳에서 한다. 빠뜨릴 곳이 없다
 3. 에러는 `ApiError(status, code, detail)` 하나로 바뀐다. 백엔드 `ProblemDetail`의 `code`로 분기하고, 사용자에게는 `detail`(한글 메시지)을 보여 준다
    - 서버 페이지에서 404면 `notFound()`를 불러 `not-found.tsx`를 보여 준다
+   - 그 밖에 서버에서 처리하지 못한 에러는 `app/error.tsx`가 보여 준다. 운영 빌드에서 Next는 서버 에러 메시지를 숨기고 `digest`(로그 추적 번호)만 넘기므로 고정 문구 + digest를 보여 준다. 사용자에게 이유를 알려야 하는 에러(결제 불가 등)는 페이지나 컴포넌트에서 `ApiError`를 직접 처리한다
 4. 사용자 식별: 첫 화면에서 입력한 아이디를 쿠키(`roampass_user`)에 두고, 서버는 `cookies()`, 브라우저는 `document.cookie`로 읽어 `X-User-Id` 헤더에 붙인다. 운영자 아이디(`X-Admin-Id`)는 조치 API를 만들 때 같은 방식으로 추가한다
 
 ### 5.3 폴링 (TanStack Query `useQuery`)
