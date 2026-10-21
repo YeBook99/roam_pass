@@ -2,14 +2,19 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { INSTALL_STATUS_LABEL } from '@/features/issue/types'; // 다른 기능은 types만 가져다 쓴다
+import { ORDER_STATUS_LABEL } from '@/features/order/types';
+import { PAYMENT_STATUS_LABEL } from '@/features/payment/types';
+import { SIM_TYPE_LABEL } from '@/features/plan/types';
 import { ADMIN_FILTER_KEYS, type AdminFilters as Filters } from '../types';
 
-// 각 필터의 선택지. 값은 백엔드 enum 문자열 그대로, 빈 문자열 = 전체
+// 각 필터의 선택지 = 각 기능 types.ts의 이름표(Record)의 키. 값은 백엔드 enum 문자열 그대로, 빈 문자열 = 전체
+// 손으로 배열을 쓰지 않는 이유: Record는 상태가 하나라도 빠지면 빌드가 실패해서 누락을 막아 준다
 const OPTIONS = {
-  orderStatus: ['PENDING', 'EXPIRED', 'PAID', 'ISSUING', 'ISSUED', 'PICKUP_READY', 'ISSUE_FAILED', 'REFUNDING', 'REFUNDED', 'REFUND_FAILED'],
-  payStatus: ['READY', 'APPROVED', 'FAILED', 'PARTIAL_CANCELED', 'CANCELED'],
-  installStatus: ['ISSUED', 'QR_VIEWED', 'INSTALLED', 'ACTIVE', 'EXPIRED'],
-  simType: ['ESIM', 'USIM'],
+  orderStatus: Object.keys(ORDER_STATUS_LABEL),
+  payStatus: Object.keys(PAYMENT_STATUS_LABEL),
+  installStatus: Object.keys(INSTALL_STATUS_LABEL),
+  simType: Object.keys(SIM_TYPE_LABEL),
 };
 
 const SELECTS: { key: keyof typeof OPTIONS; label: string }[] = [
@@ -21,7 +26,8 @@ const SELECTS: { key: keyof typeof OPTIONS; label: string }[] = [
 
 // 동작: 필터를 고르고 [조회]를 누르면 URL만 바꾼다 (/admin?orderStatus=ISSUED&from=2026-10-21)
 // 그러면 페이지(Server Component)가 새 URL로 다시 실행되어 서버에서 조회한다
-// 이 컴포넌트는 데이터를 직접 가져오지 않는다. 필터 값은 URL 한 곳에만 있다 (ARCHITECTURE.md §7)
+// 이 컴포넌트는 데이터를 직접 가져오지 않는다 (ARCHITECTURE.md §7)
+// 확정된 필터 값은 URL에만 있고, useState는 [조회]를 누르기 전에 고르고 있는 값(초안)만 들고 있다
 export function AdminFilters({ current }: { current: Filters }) {
   const [filters, setFilters] = useState<Filters>(current);
   const router = useRouter();

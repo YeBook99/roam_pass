@@ -124,7 +124,8 @@ Server Component ──fetch(API_INTERNAL_URL + '/api/...')──▶ Spring
 ## 7. URL 상태
 
 - 어드민 필터·페이지는 URL 쿼리에 담는다(`/admin?orderStatus=ISSUED&page=1`). 페이지(Server)가 `searchParams`를 읽어 조회하고, 필터 폼(Client)은 `router.push`로 URL만 바꾼다
-- 이유: 새로고침·링크 공유해도 같은 화면이 나온다. 상태를 두 곳(URL과 `useState`)에 두지 않는다
+- 이유: 새로고침·링크 공유해도 같은 화면이 나온다. **확정된 값은 URL 한 곳에만** 둔다. 폼의 `useState`는 [조회]를 누르기 전 고르는 중인 값(초안)만 든다. URL이 바뀌면(초기화, 뒤로 가기) 폼에 `key`를 줘서 새로 만들어 URL과 맞춘다
+- URL은 누구나 고쳐 보낼 수 있다. 잘못된 값이면 백엔드가 400을 주고, 페이지는 `ApiError`를 잡아 이유와 [초기화] 링크를 보여 준다
 
 ## 8. 이름 규칙
 

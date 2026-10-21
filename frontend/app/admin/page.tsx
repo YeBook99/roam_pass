@@ -5,6 +5,7 @@ import { AdminFilters } from '@/features/admin/components/AdminFilters';
 import { RefreshControls } from '@/features/admin/components/RefreshControls';
 import { getAdminOrders } from '@/features/admin/server';
 import { ADMIN_FILTER_KEYS, type AdminFilters as Filters } from '@/features/admin/types';
+import { ApiError } from '@/lib/api-error';
 
 export const dynamic = 'force-dynamic'; // 운영자는 항상 최신 상태를 봐야 한다
 
@@ -24,7 +25,23 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
   }
   const page = Math.max(0, Number(params.page) || 0);
 
-  const result = await getAdminOrders(filters, page);
+  // 공유받은 링크에 잘못된 값이 있으면(?orderStatus=FOO, ?from=abc) 백엔드가 400을 준다
+  // 에러 화면 대신 백엔드가 알려 준 이유와 [초기화] 링크를 보여 준다
+  let result;
+  try {
+    result = await getAdminOrders(filters, page);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 400) {
+      return (
+        <div className="stack">
+          <h1>어드민 · 주문 목록</h1>
+          <p className="error">필터 값이 올바르지 않습니다: {e.message}</p>
+          <Link href="/admin">필터 초기화</Link>
+        </div>
+      );
+    }
+    throw e;
+  }
   const lastPage = Math.max(0, Math.ceil(result.totalElements / result.size) - 1);
 
   // 지금 필터를 유지한 채 page만 바꾼 링크 주소
@@ -81,15 +98,19 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
           ))}
         </tbody>
       </table>
-      {result.content.length === 0 && <p>조건에 맞는 주문이 없습니다.</p>}
+      {result.content.length === 0 && page > lastPage && <Link href={pageHref(0)}>없는 페이지입니다. 첫 페이지로</Link>}
+      {result.content.length === 0 && page <= lastPage && <p>조건에 맞는 주문이 없습니다.</p>}
 
-      <div className="row">
-        {page > 0 && <Link href={pageHref(page - 1)}>← 이전</Link>}
-        <span>
-          {page + 1} / {lastPage + 1} 페이지
-        </span>
-        {page < lastPage && <Link href={pageHref(page + 1)}>다음 →</Link>}
-      </div>
+      {/* 범위 밖 페이지(?page=99)면 페이지 링크를 숨긴다 */}
+      {page <= lastPage && (
+        <div className="row">
+          {page > 0 && <Link href={pageHref(page - 1)}>← 이전</Link>}
+          <span>
+            {page + 1} / {lastPage + 1} 페이지
+          </span>
+          {page < lastPage && <Link href={pageHref(page + 1)}>다음 →</Link>}
+        </div>
+      )}
     </div>
   );
 }
