@@ -1,7 +1,9 @@
 package com.roampass.order.repository;
 
+import com.roampass.order.domain.OrderStatus;
 import com.roampass.order.domain.SimOrder;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -15,6 +17,8 @@ public interface SimOrderRepository extends JpaRepository<SimOrder, Long> {
     Optional<SimOrder> findBySupplierOrderNo(String supplierOrderNo);
 
     Optional<SimOrder> findByOrderNo(String orderNo);
+
+    List<SimOrder> findByStatusAndPaidAtBefore(OrderStatus status, Instant before);
 
     // 상태 선점: 현재 상태가 from일 때만 바꾼다. 반환값 1 = 내가 바꿈, 0 = 이미 다른 요청이 바꿈
     @Modifying(clearAutomatically = true)

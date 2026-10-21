@@ -19,6 +19,7 @@ import com.roampass.plan.service.PlanService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -93,13 +94,28 @@ public class OrderService {
 
     // 발급 기능용 tx1: PAID→ISSUING을 선점하고 요청 시각을 남긴다. 성공하면 주문번호, 다른 요청이 먼저 바꿨으면 empty
     @Transactional
-    public Optional<String> startIssuing(Long orderId) {
+    public Optional<String> startIssuing(Long orderId, Signal signal) {
         Instant now = Instant.now(clock);
-        if (!transit(orderId, OrderStatus.PAID, OrderStatus.ISSUING, Actor.SYSTEM, Signal.EVENT, "발급 요청", now)) {
+        if (!transit(orderId, OrderStatus.PAID, OrderStatus.ISSUING, Actor.SYSTEM, signal, "발급 요청", now)) {
             return Optional.empty();
         }
         orderRepository.recordIssueRequestedAt(orderId, now);
         return Optional.of(getOrder(orderId).getOrderNo());
+    }
+
+    // 유심: PAID→PICKUP_READY (공항 수령 대기). 이미 누가 바꿨으면 false
+    @Transactional
+    public boolean markPickupReady(Long orderId, Signal signal) {
+        return transit(orderId, OrderStatus.PAID, OrderStatus.PICKUP_READY, Actor.SYSTEM, signal,
+                "유심 수령 대기", Instant.now(clock));
+    }
+
+    // 발급 안전망용: 결제된 지 오래됐는데 아직 PAID인 주문 (= 발급이 시작되지 않은 주문)
+    @Transactional(readOnly = true)
+    public List<OrderPaidEvent> getPaidOrdersBefore(Instant before) {
+        return orderRepository.findByStatusAndPaidAtBefore(OrderStatus.PAID, before).stream()
+                .map(order -> new OrderPaidEvent(order.getId(), order.getSimType()))
+                .toList();
     }
 
     // 발급 기능용 tx2: 공급사가 접수하며 준 supplierOrderNo를 저장한다

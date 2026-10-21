@@ -2,12 +2,15 @@ package com.roampass.issue.repository;
 
 import com.roampass.issue.domain.SimProfile;
 import java.time.Instant;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface SimProfileRepository extends JpaRepository<SimProfile, Long> {
+
+    Optional<SimProfile> findByOrderId(Long orderId);
 
     // 이미 같은 주문·ICCID의 프로필이 있으면 만들지 않고 0을 돌려준다
     @Modifying
