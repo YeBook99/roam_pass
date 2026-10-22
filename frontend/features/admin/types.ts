@@ -53,7 +53,7 @@ export type TimelineItem = {
   fromStatus: string | null; // 처음 만들어질 때는 null
   toStatus: string;
   actor: string; // USER, SYSTEM, PG, SUPPLIER, ADMIN:아이디
-  signal: string; // API, WEBHOOK, CALLBACK, POLLING, SCHEDULER, ADMIN, EVENT
+  signal: Signal;
   reason: string | null;
   occurredAt: string;
   recordedAt: string;
@@ -74,4 +74,18 @@ export const TIMELINE_TARGET_LABEL: Record<TimelineItem['target'], string> = {
   ORDER: '주문',
   PAYMENT: '결제',
   PROFILE: 'SIM',
+};
+
+// 상태가 바뀐 것을 알게 된 경로. 백엔드 history.domain.Signal과 같은 값
+export type Signal = 'API' | 'WEBHOOK' | 'CALLBACK' | 'POLLING' | 'SCHEDULER' | 'ADMIN' | 'EVENT';
+
+// 화면에 보여 줄 이름. 같은 "결제 승인"도 누가 알려 줬는지에 따라 다르게 보인다
+export const SIGNAL_LABEL: Record<Signal, string> = {
+  API: '요청 응답', // 우리가 보낸 요청의 응답으로 알게 됨 (결제 요청, 사용자 버튼 등)
+  WEBHOOK: '결제 회사 알림', // 결제 회사가 먼저 알려 줌
+  CALLBACK: '공급사 알림', // 공급사가 먼저 알려 줌 (발급 완료)
+  POLLING: '1분 설치 확인', // 1분마다 공급사에 설치·개통을 물어봄
+  SCHEDULER: '정기 확인 작업', // 정해진 시간마다 도는 작업이 직접 확인함 (결제 대사, 발급 안전망)
+  ADMIN: '운영자',
+  EVENT: '결제 후 자동 시작', // 결제가 확정되자마자 서버가 이어서 시작함
 };

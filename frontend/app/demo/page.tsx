@@ -1,3 +1,4 @@
+import { OrderTracePanel } from '@/features/admin/components/OrderTracePanel';
 import { PgScenarioPanel } from '@/features/mock/components/PgScenarioPanel';
 import { SupplierStatePanel } from '@/features/mock/components/SupplierStatePanel';
 import { getPgSettings } from '@/features/mock/server';
@@ -38,6 +39,9 @@ export default async function DemoPage() {
         <PgScenarioPanel key={JSON.stringify(settings)} current={settings} />
         <SupplierStatePanel />
       </div>
+
+      {/* 상황을 켜고 결제한 뒤, 누가(결제 응답·결제 회사 알림·정기 확인 작업) 결제를 확정하는지 여기서 실시간으로 본다 */}
+      <OrderTracePanel />
     </div>
   );
 }

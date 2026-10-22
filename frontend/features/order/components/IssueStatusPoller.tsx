@@ -56,7 +56,9 @@ export function IssueStatusPoller({ initial }: { initial: Order }) {
       {order.status === 'PICKUP_READY' && <p>유심은 공항에서 받으실 수 있어요.</p>}
       {order.status === 'ISSUE_FAILED' && <p>발급에 실패했습니다.</p>}
       {order.status === 'REFUNDING' && <p>환불을 진행하고 있습니다.</p>}
-      {order.status === 'PENDING' && <p>아직 결제가 확정되지 않았어요. 결제 결과를 확인하고 있습니다.</p>}
+      {order.status === 'PENDING' && (
+        <p>결제 회사 응답이 늦어 결과를 확인하고 있어요. 길면 1~2분 걸릴 수 있어요.</p>
+      )}
 
       {!finished && (
         <>
