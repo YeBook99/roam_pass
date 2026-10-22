@@ -16,6 +16,8 @@ docker compose up -d --build --wait
 
 확인: `curl localhost:8080/actuator/health` → `{"status":"UP"}`, 화면 http://localhost:3000
 
+시연: http://localhost:3000/demo 에서 결제 시간 초과·거절·알림 누락·알림 중복·금액 틀린 알림을 버튼으로 켜고, SIM의 설치·개통을 흉내 낼 수 있습니다. 시연이 끝나면 [정상으로 되돌리기]를 누릅니다(설정은 모든 사용자에게 바로 적용됩니다)
+
 정리: `docker compose down -v`
 
 ## 현재 한계 (작업 중, 보완 예정)

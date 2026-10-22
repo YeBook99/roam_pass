@@ -16,6 +16,10 @@ const GROUPS = [
     label: '운영',
     items: [{ href: '/admin', label: '주문', match: (p: string) => p.startsWith('/admin') }],
   },
+  {
+    label: '시연',
+    items: [{ href: '/demo', label: '시연 설정', match: (p: string) => p.startsWith('/demo') }],
+  },
 ];
 
 // 동작: 왼쪽 메뉴. 지금 보는 화면의 메뉴 줄에 회색 바탕을 깔아 표시한다(aria-current)
