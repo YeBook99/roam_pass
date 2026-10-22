@@ -1,9 +1,10 @@
-package com.roampass.plan.service;
+package com.roampass.plan.service.impl;
 
 import com.roampass.global.error.BusinessException;
 import com.roampass.plan.dto.PlanResponse;
 import com.roampass.plan.exception.PlanErrorCode;
 import com.roampass.plan.repository.SimPlanRepository;
+import com.roampass.plan.service.PlanService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

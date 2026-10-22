@@ -1,4 +1,4 @@
-package com.roampass.payment.service;
+package com.roampass.payment.service.impl;
 
 import com.roampass.callback.service.CallbackLogService;
 import com.roampass.history.domain.Actor;
@@ -11,6 +11,7 @@ import com.roampass.payment.domain.Payment;
 import com.roampass.payment.domain.PaymentConfirmResult;
 import com.roampass.payment.domain.PaymentStatus;
 import com.roampass.payment.repository.PaymentRepository;
+import com.roampass.payment.service.PaymentConfirmService;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;

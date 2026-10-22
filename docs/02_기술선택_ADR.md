@@ -295,9 +295,10 @@
 - **맥락**: ADR-15까지는 Controller와 다른 기능이 `OrderService` 같은 **구현 클래스**를 바로 주입받았다. 기능이 늘면서 결제·발급·설치 추적이 `OrderService`를 부르는데, 그 클래스에는 public 메서드와 private 도우미, 트랜잭션 애노테이션이 섞여 있어 "주문 기능이 밖에 내놓은 일이 무엇인지"를 한눈에 보기 어려웠다
 - **결정**: `@Service` 12개를 모두 **인터페이스(원래 이름) + 구현(`*ServiceImpl`)**으로 나눴다
   - 인터페이스: public 메서드 선언과 "무엇을 하나" 주석만. 예: `order/service/OrderService.java`
-  - 구현: 트랜잭션(`@Transactional`)·이벤트 수신(`@TransactionalEventListener`, `@Async`)·켜고 끄기(`@ConditionalOnProperty`)와 업무 코드. 예: `order/service/OrderServiceImpl.java`
+  - 구현: 트랜잭션(`@Transactional`)·이벤트 수신(`@TransactionalEventListener`, `@Async`)·켜고 끄기(`@ConditionalOnProperty`)와 업무 코드. 예: `order/service/impl/OrderServiceImpl.java`
+  - 폴더: `service`에는 인터페이스(와 스케줄러·설정)를 모으고, 구현은 그 아래 `service/impl`에 둔다(2026-10-22 사용자 결정). service 폴더만 열면 기능이 밖에 내놓은 일이 바로 보인다
   - 부르는 쪽(Controller, 다른 기능 Service, 스케줄러)은 원래부터 `OrderService` 타입으로 받고 있어서 **코드를 고치지 않았다**. 그 이름이 인터페이스가 됐을 뿐이다
-  - `ArchitectureTest`에 규칙 세 개를 넣었다: service 패키지의 `*Service`는 인터페이스여야 한다 / `*ServiceImpl`은 자기 자신 말고 아무도(다른 구현 포함) 직접 쓰면 안 된다 / `@Service`는 `*ServiceImpl`에만 붙는다. 일부러 Controller가 구현을 직접 쓰게 바꿔 보고 검사가 실패하는 것을 확인했다
+  - `ArchitectureTest`에 규칙 네 개를 넣었다: service 패키지의 `*Service`는 인터페이스여야 한다 / `*ServiceImpl`은 `service.impl` 폴더에만 있다 / `*ServiceImpl`은 자기 자신 말고 아무도(다른 구현 포함) 직접 쓰면 안 된다 / `@Service`는 `*ServiceImpl`에만 붙는다. 일부러 Controller가 구현을 직접 쓰게 바꿔 보고 검사가 실패하는 것을 확인했다
   - 대상 아님: 스케줄러(부르는 쪽이 없음), 모의 발송기(`@Component`), 설정 묶음(`*Properties`), 바깥 연동(`infra.*Client`는 원래 인터페이스)
 - **고려한 대안**
 

@@ -1,4 +1,4 @@
-package com.roampass.order.service;
+package com.roampass.order.service.impl;
 
 import com.roampass.global.config.ClockConfig;
 import com.roampass.global.error.BusinessException;
@@ -14,6 +14,8 @@ import com.roampass.order.dto.OrderResponse;
 import com.roampass.order.dto.PayableOrder;
 import com.roampass.order.exception.OrderErrorCode;
 import com.roampass.order.repository.SimOrderRepository;
+import com.roampass.order.service.OrderProperties;
+import com.roampass.order.service.OrderService;
 import com.roampass.plan.dto.PlanResponse;
 import com.roampass.plan.service.PlanService;
 import java.time.Clock;

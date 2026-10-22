@@ -1,4 +1,4 @@
-package com.roampass.admin.service;
+package com.roampass.admin.service.impl;
 
 import com.roampass.admin.dto.AdminOrderDetailResponse;
 import com.roampass.admin.dto.AdminOrderFilter;
@@ -7,6 +7,7 @@ import com.roampass.admin.dto.AdminOrderSummaryResponse;
 import com.roampass.admin.dto.TimelineItem;
 import com.roampass.admin.exception.AdminErrorCode;
 import com.roampass.admin.repository.AdminOrderQueryRepository;
+import com.roampass.admin.service.AdminOrderService;
 import com.roampass.global.config.ClockConfig;
 import com.roampass.global.error.BusinessException;
 import com.roampass.global.web.PageResponse;
