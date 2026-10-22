@@ -34,3 +34,9 @@ export function formatKst(iso: string | null | undefined, withSeconds = false): 
 export function todayKst(): string {
   return KST_DATE.format(new Date());
 }
+
+// 두 시각 사이에 걸린 시간을 "1분 12초"처럼 (경과 시간이라 시간대와 관계없다)
+export function formatElapsed(fromIso: string, toMs: number): string {
+  const sec = Math.max(0, Math.floor((toMs - Date.parse(fromIso)) / 1000));
+  return sec >= 60 ? `${Math.floor(sec / 60)}분 ${sec % 60}초` : `${sec}초`;
+}

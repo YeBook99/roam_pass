@@ -9,7 +9,8 @@ import { SupplierStatePanel } from '@/features/mock/components/SupplierStatePane
 import { INSTALL_STATUS_TONE } from '@/features/issue/types';
 import { ORDER_STATUS_TONE } from '@/features/order/types';
 import { PAYMENT_STATUS_TONE } from '@/features/payment/types';
-import { TIMELINE_TARGET_LABEL, type TimelineItem } from '@/features/admin/types';
+import { PaymentResolutionLine } from '@/features/admin/components/PaymentResolutionLine';
+import { SIGNAL_LABEL, TIMELINE_TARGET_LABEL, type TimelineItem } from '@/features/admin/types';
 import { orNotFound } from '@/lib/api-server';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +56,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               label={order.installStatus}
             />
           </div>
+          {/* 결제를 누가 확정했나 (요청 응답·결제 회사 알림·정기 확인 작업) */}
+          <PaymentResolutionLine timeline={timeline} nowMs={Date.parse(fetchedAt)} />
         </div>
         <div className="row">
           <FreshnessBadge fetchedAt={fetchedAt} />
@@ -92,7 +95,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                       <span className="muted">{item.fromStatus ?? '(생성)'} →</span> {item.toStatus}
                     </td>
                     <td>
-                      {item.actor} <span className="muted">· {item.signal}</span>
+                      {item.actor} <span className="muted">· {SIGNAL_LABEL[item.signal]}</span>
                     </td>
                     <td className="muted wrap">{item.reason ?? ''}</td>
                   </tr>
