@@ -22,7 +22,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -80,17 +79,15 @@ public class PaymentService {
         }
 
         PayableOrder order = orderService.getPayableOrder(orderNo, userId);
-        int inserted;
-        try {
-            inserted = paymentRepository.insertIgnore(order.orderId(), idempotencyKey, order.amount(), Instant.now(clock));
-        } catch (DataIntegrityViolationException e) {
-            // 같은 주문에 READY 결제가 이미 있음 (다른 탭에서 동시에 결제)
-            throw new BusinessException(PaymentErrorCode.PAYMENT_IN_PROGRESS);
+        int inserted = paymentRepository.insertIgnore(order.orderId(), idempotencyKey, order.amount(), Instant.now(clock));
+        if (inserted == 0) {
+            // 만들지 못했다. 내 키로 된 결제가 있으면 같은 키가 동시에 들어와 다른 요청이 먼저 만든 것이고(그 결과를 돌려준다),
+            // 없으면 같은 주문에 다른 키의 READY 결제가 이미 있는 것이다(다른 탭에서 동시에 결제)
+            Payment sameKey = paymentRepository.findByIdempotencyKey(idempotencyKey)
+                    .orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_IN_PROGRESS));
+            return Started.existing(sameOrder(sameKey, order.orderId()));
         }
         Payment payment = paymentRepository.findByIdempotencyKey(idempotencyKey).orElseThrow();
-        if (inserted == 0) {
-            return Started.existing(sameOrder(payment, order.orderId()));   // 같은 키가 동시에 들어와 다른 요청이 먼저 만들었다
-        }
         historyService.record(TargetType.PAYMENT, payment.getId(), null, PaymentStatus.READY.name(),
                 Actor.USER, Signal.API, "결제 요청");
         return new Started(payment.getId(), payment.getAmount(), true);
