@@ -297,7 +297,7 @@
   - 인터페이스: public 메서드 선언과 "무엇을 하나" 주석만. 예: `order/service/OrderService.java`
   - 구현: 트랜잭션(`@Transactional`)·이벤트 수신(`@TransactionalEventListener`, `@Async`)·켜고 끄기(`@ConditionalOnProperty`)와 업무 코드. 예: `order/service/OrderServiceImpl.java`
   - 부르는 쪽(Controller, 다른 기능 Service, 스케줄러)은 원래부터 `OrderService` 타입으로 받고 있어서 **코드를 고치지 않았다**. 그 이름이 인터페이스가 됐을 뿐이다
-  - `ArchitectureTest`에 규칙 두 개를 넣었다: service 패키지의 `*Service`는 인터페이스여야 한다 / `*ServiceImpl`은 다른 클래스가 직접 쓰면 안 된다. 일부러 Controller가 구현을 직접 쓰게 바꿔 보고 검사가 실패하는 것을 확인했다
+  - `ArchitectureTest`에 규칙 세 개를 넣었다: service 패키지의 `*Service`는 인터페이스여야 한다 / `*ServiceImpl`은 자기 자신 말고 아무도(다른 구현 포함) 직접 쓰면 안 된다 / `@Service`는 `*ServiceImpl`에만 붙는다. 일부러 Controller가 구현을 직접 쓰게 바꿔 보고 검사가 실패하는 것을 확인했다
   - 대상 아님: 스케줄러(부르는 쪽이 없음), 모의 발송기(`@Component`), 설정 묶음(`*Properties`), 바깥 연동(`infra.*Client`는 원래 인터페이스)
 - **고려한 대안**
 
@@ -310,6 +310,6 @@
 - **처음 써 봄?**: ✍️
 - **한계와 바꿀 조건**
   - 파일 수가 서비스만큼 늘었다(12개). 구현이 하나뿐인 인터페이스가 대부분이다
-  - 인터페이스와 구현의 메서드 주석이 어긋날 수 있다. 설명은 인터페이스에만 쓰고 구현에는 "어떻게"만 쓴다
+  - 메서드 주석이 인터페이스와 구현에 두 벌 있다(나눌 때 원래 주석을 구현에 그대로 두고 인터페이스에 복사했다. 주석 안에 "무엇"과 "어떻게"가 섞여 있어 기계적으로 가르지 않았다). 메서드를 고칠 때는 두 곳 주석을 같이 고친다. 새로 만드는 서비스는 "무엇"을 인터페이스에, "어떻게"를 구현에 쓴다
   - 같은 서비스 안에서 자기 메서드를 부르면 `@Transactional`이 안 걸리는 문제(§6.2)는 인터페이스와 상관없이 그대로다
 

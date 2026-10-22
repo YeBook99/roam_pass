@@ -87,12 +87,19 @@ class ArchitectureTest {
             .should().beInterfaces()
             .allowEmptyShould(true);
 
-    // §6.1-6: 구현(*ServiceImpl)을 직접 쓰는 코드가 없어야 한다. 컨트롤러·다른 기능·스케줄러는 인터페이스만 안다
+    // §6.1-6: 구현(*ServiceImpl)은 자기 자신 말고 아무도 직접 쓰지 않는다. 컨트롤러·다른 기능·스케줄러·다른 구현도 인터페이스만 안다
     //     (구현 객체는 Spring이 만들어 인터페이스 자리에 넣어 준다)
     @ArchTest
-    static final ArchRule 서비스_구현을_직접_쓰지_않음 = noClasses()
-            .that().haveSimpleNameNotEndingWith("ServiceImpl")
-            .should().dependOnClassesThat().haveSimpleNameEndingWith("ServiceImpl")
+    static final ArchRule 서비스_구현을_직접_쓰지_않음 = ArchRuleDefinition.classes()
+            .that().resideInAPackage(BASE + "..")
+            .should(notUseOtherServiceImpl())
+            .allowEmptyShould(true);
+
+    // §6.1-6: @Service는 구현 클래스에만 붙고, 구현 이름은 *ServiceImpl이다
+    @ArchTest
+    static final ArchRule Service_애노테이션은_구현에만 = ArchRuleDefinition.classes()
+            .that().areAnnotatedWith(org.springframework.stereotype.Service.class)
+            .should().haveSimpleNameEndingWith("ServiceImpl")
             .allowEmptyShould(true);
 
     // §6.1-1·3: @Transactional은 Service 메서드에만
@@ -111,6 +118,22 @@ class ArchitectureTest {
     // §15-6: 생성자 주입만
     @ArchTest
     static final ArchRule 필드_주입_금지 = NO_CLASSES_SHOULD_USE_FIELD_INJECTION.allowEmptyShould(true);
+
+    private static ArchCondition<JavaClass> notUseOtherServiceImpl() {
+        return new ArchCondition<>("다른 서비스 구현(*ServiceImpl)을 직접 쓰지 않는다") {
+            @Override
+            public void check(JavaClass origin, ConditionEvents events) {
+                for (Dependency dependency : origin.getDirectDependenciesFromSelf()) {
+                    JavaClass target = dependency.getTargetClass();
+                    boolean self = origin.getName().equals(target.getName())
+                            || origin.getName().startsWith(target.getName() + "$");   // 구현 안의 내부 record 등
+                    if (target.getSimpleName().endsWith("ServiceImpl") && !self) {
+                        events.add(SimpleConditionEvent.violated(dependency, dependency.getDescription()));
+                    }
+                }
+            }
+        };
+    }
 
     private static ArchCondition<JavaClass> useOnlyRepositoriesOfOwnFeature() {
         return new ArchCondition<>("자기 기능의 repository만 사용한다") {

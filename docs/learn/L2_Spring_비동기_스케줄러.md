@@ -98,7 +98,7 @@ public class AsyncConfig {
 }
 
 @Service
-public class IssueService {
+public class IssueServiceImpl implements IssueService {   // 인터페이스 + 구현 (ADR-18)
     @Async("issueExecutor")         // ③ 이 메서드는 issue- 스레드에서 실행됨
     public void requestIssue(Long orderId) { ... }
 }
@@ -130,7 +130,7 @@ public record OrderPaidEvent(Long orderId) {}
 
 // 발행하는 쪽 (트랜잭션 안)
 @Service
-public class PaymentConfirmService {
+public class PaymentConfirmServiceImpl implements PaymentConfirmService {
     private final ApplicationEventPublisher events;
 
     @Transactional

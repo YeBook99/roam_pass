@@ -207,7 +207,7 @@ public class ProductServiceImpl implements ProductService {
 6. **Service는 인터페이스(`{Feature}Service`)와 구현(`{Feature}ServiceImpl`)으로 나눈다.** Controller·다른 기능·스케줄러는 인터페이스만 주입받고, 구현 클래스를 직접 쓰지 않는다(구현 객체는 Spring이 인터페이스 자리에 넣어 준다)
    - 인터페이스에는 public 메서드 선언과 "무엇을 하나" 주석만 둔다. `@Transactional`, `@TransactionalEventListener`, `@Async`, `@ConditionalOnProperty`는 **구현 쪽**에 둔다
    - 이유: 다른 기능은 "무엇을 해 주나"만 알면 되고 "어떻게 하나"는 몰라야 한다. 인터페이스 파일만 읽으면 그 기능이 밖에 내놓은 일이 한눈에 보인다. 시험에서 가짜 구현으로 바꾸기도 쉽다
-   - `ArchitectureTest`가 지킨다: service 패키지의 `*Service`는 인터페이스여야 하고, `*ServiceImpl`은 다른 클래스가 직접 쓰면 안 된다
+   - `ArchitectureTest`가 지킨다: service 패키지의 `*Service`는 인터페이스, `*ServiceImpl`은 자기 자신 말고 아무도(다른 구현 포함) 직접 쓰지 않음, `@Service`는 `*ServiceImpl`에만
 
 ### 6.2 같은 클래스 안에서 부르면 `@Transactional`이 걸리지 않는다
 
@@ -598,7 +598,8 @@ infra.pg
 ```
 {base}.product
 ├─ controller/ProductController.java          POST /api/products, GET /api/products/{id}
-├─ service/ProductService.java                create(@Transactional), get(readOnly)
+├─ service/ProductService.java                인터페이스: create, get
+├─ service/ProductServiceImpl.java            구현: create(@Transactional), get(readOnly)
 ├─ repository/ProductRepository.java          JpaRepository<Product, Long> + existsByCode
 ├─ domain/Product.java                        Entity (§9 예시)
 ├─ domain/ProductStatus.java                  ON_SALE, STOPPED
@@ -614,4 +615,4 @@ test/.../product
 └─ service/ProductServiceTest.java            Testcontainers: 등록 후 row 1개, 중복 코드면 DUPLICATE_CODE
 ```
 
-외부 호출이 있는 기능은 §7의 `PaymentService.pay()` 모양을 따른다.
+외부 호출이 있는 기능은 §7의 `PaymentServiceImpl.pay()` 모양을 따른다.

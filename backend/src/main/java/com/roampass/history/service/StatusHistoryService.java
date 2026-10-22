@@ -10,5 +10,5 @@ public interface StatusHistoryService {
 
     // MANDATORY: 상태 변경과 이력이 반드시 한 트랜잭션이어야 한다. 트랜잭션 밖에서 부르면 예외
     void record(TargetType type, long targetId, String fromStatus, String toStatus,
-                       Actor actor, Signal signal, String reason);
+            Actor actor, Signal signal, String reason);
 }
