@@ -80,6 +80,21 @@ class ArchitectureTest {
             .should().resideInAnyPackage("..facade..", "..manager..", "..util..", "..helper..", "..common..", "..api..")
             .allowEmptyShould(true);
 
+    // §6.1-6: 서비스는 인터페이스로 부른다. service 패키지의 *Service는 인터페이스이고, 구현은 *ServiceImpl이다
+    @ArchTest
+    static final ArchRule 서비스는_인터페이스 = ArchRuleDefinition.classes()
+            .that().resideInAPackage(SERVICE).and().haveSimpleNameEndingWith("Service")
+            .should().beInterfaces()
+            .allowEmptyShould(true);
+
+    // §6.1-6: 구현(*ServiceImpl)을 직접 쓰는 코드가 없어야 한다. 컨트롤러·다른 기능·스케줄러는 인터페이스만 안다
+    //     (구현 객체는 Spring이 만들어 인터페이스 자리에 넣어 준다)
+    @ArchTest
+    static final ArchRule 서비스_구현을_직접_쓰지_않음 = noClasses()
+            .that().haveSimpleNameNotEndingWith("ServiceImpl")
+            .should().dependOnClassesThat().haveSimpleNameEndingWith("ServiceImpl")
+            .allowEmptyShould(true);
+
     // §6.1-1·3: @Transactional은 Service 메서드에만
     @ArchTest
     static final ArchRule Transactional은_service_메서드에만 = methods()

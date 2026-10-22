@@ -16,7 +16,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 // 기존 {{Feature}}Service에 메서드로 추가해도 되고, 메서드가 많아지면 {{Feature}}{Action}Service로 나눈다
 @Service
 @RequiredArgsConstructor
-public class {{Feature}}{{Action}}Service {
+public class {{Feature}}{{Action}}ServiceImpl implements {{Feature}}{{Action}}Service {
 
     private final {{Entity}}Repository {{entity}}Repository;
     private final {{System}}Client {{system}}Client;

@@ -58,7 +58,7 @@
 {base}
 ├─ {feature}                      업무 기능 하나 (예: product, order, payment)
 │   ├─ controller                 {Feature}Controller
-│   ├─ service                    {Feature}Service
+│   ├─ service                    {Feature}Service(인터페이스), {Feature}ServiceImpl(구현)
 │   ├─ repository                 {Entity}Repository, {Feature}QueryRepository
 │   ├─ domain                     {Entity}, enum, 값 객체
 │   ├─ dto                        {Feature}{Action}Request, {Feature}Response, {Feature}{Action}Command
@@ -160,12 +160,22 @@ public class ProductController {
 ### 6.1 기본
 
 ```java
+// 부르는 쪽(Controller, 다른 기능)이 아는 것은 이 인터페이스뿐이다
+public interface ProductService {
+
+    ProductResponse create(ProductCreateCommand command);
+
+    ProductResponse get(Long productId);
+}
+
+// 구현. 트랜잭션·업무 판단은 여기에 있다
 @Service
 @RequiredArgsConstructor
-public class ProductService {
+public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
 
+    @Override
     @Transactional
     public ProductResponse create(ProductCreateCommand command) {
         if (productRepository.existsByCode(command.code())) {
@@ -175,6 +185,7 @@ public class ProductService {
         return ProductResponse.from(product);
     }
 
+    @Override
     @Transactional(readOnly = true)
     public ProductResponse get(Long productId) {
         return ProductResponse.from(getProduct(productId));
@@ -193,6 +204,10 @@ public class ProductService {
 3. Controller, Repository, Infra, Domain에는 `@Transactional`을 붙이지 않는다
 4. Service는 **Response DTO를 돌려준다.** Entity를 돌려주면 트랜잭션이 끝난 뒤 Controller에서 지연 로딩 예외가 나거나 Entity가 응답에 섞인다
 5. 다른 Service의 public 메서드를 부를 때 트랜잭션은 기본 전파(`REQUIRED`)로 합쳐진다. `REQUIRES_NEW`는 "바깥이 롤백돼도 남아야 하는 기록"처럼 이유를 설명할 수 있을 때만 쓴다
+6. **Service는 인터페이스(`{Feature}Service`)와 구현(`{Feature}ServiceImpl`)으로 나눈다.** Controller·다른 기능·스케줄러는 인터페이스만 주입받고, 구현 클래스를 직접 쓰지 않는다(구현 객체는 Spring이 인터페이스 자리에 넣어 준다)
+   - 인터페이스에는 public 메서드 선언과 "무엇을 하나" 주석만 둔다. `@Transactional`, `@TransactionalEventListener`, `@Async`, `@ConditionalOnProperty`는 **구현 쪽**에 둔다
+   - 이유: 다른 기능은 "무엇을 해 주나"만 알면 되고 "어떻게 하나"는 몰라야 한다. 인터페이스 파일만 읽으면 그 기능이 밖에 내놓은 일이 한눈에 보인다. 시험에서 가짜 구현으로 바꾸기도 쉽다
+   - `ArchitectureTest`가 지킨다: service 패키지의 `*Service`는 인터페이스여야 하고, `*ServiceImpl`은 다른 클래스가 직접 쓰면 안 된다
 
 ### 6.2 같은 클래스 안에서 부르면 `@Transactional`이 걸리지 않는다
 
@@ -246,7 +261,7 @@ public void on(PaymentCompletedEvent event) { ... }
 ```java
 @Service
 @RequiredArgsConstructor
-public class PaymentService {
+public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PgClient pgClient;
@@ -443,7 +458,7 @@ Spring 6의 표준 에러 응답 객체 `ProblemDetail`에 `code` 필드를 더�
 | 역할 | 이름 | 예 |
 |---|---|---|
 | Controller | `{Feature}Controller`. 관리자용은 `Admin{Feature}Controller` | `OrderController` |
-| Service | `{Feature}Service`. 메서드가 많아지면 행위로 나눔 `{Feature}{Action}Service` | `OrderService`, `OrderCancelService` |
+| Service | 인터페이스 `{Feature}Service` + 구현 `{Feature}ServiceImpl`. 메서드가 많아지면 행위로 나눔 `{Feature}{Action}Service` | `OrderService` / `OrderServiceImpl` |
 | Repository | `{Entity}Repository`. 여러 테이블 조회 전용은 `{Feature}QueryRepository` | `OrderRepository`, `AdminOrderQueryRepository` |
 | Entity | 테이블 이름의 PascalCase(단수) | `order_item` → `OrderItem` |
 | Request / Command / Response | `{Feature}{Action}Request`, `{Feature}{Action}Command`, `{Feature}Response`, 목록 요약 `{Feature}SummaryResponse` | `OrderCreateRequest` |
@@ -555,7 +570,8 @@ infra.pg
 
 **흐름**
 - [ ] Controller 메서드는 Service 메서드 하나를 부르고 DTO를 돌려준다 (§5)
-- [ ] `@Transactional`이 Service public 메서드에만 있고, 조회는 `readOnly = true`다 (§6)
+- [ ] Service는 인터페이스 + `*ServiceImpl`로 나뉘어 있고, 부르는 쪽은 인터페이스만 쓴다 (§6.1-6)
+- [ ] `@Transactional`이 Service 구현의 public 메서드에만 있고, 조회는 `readOnly = true`다 (§6)
 - [ ] 외부 호출이 있으면 `@Transactional` 없이 `TransactionTemplate`으로 tx1 → 호출 → tx2로 나눴고, 실패 시 마무리 주체를 정했다 (§7)
 - [ ] 커밋 뒤 후속 작업은 `AFTER_COMMIT` 이벤트 + 안전망으로 처리한다 (§6.4)
 
