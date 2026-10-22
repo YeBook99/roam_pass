@@ -58,7 +58,8 @@
 {base}
 ├─ {feature}                      업무 기능 하나 (예: product, order, payment)
 │   ├─ controller                 {Feature}Controller
-│   ├─ service                    {Feature}Service(인터페이스), {Feature}ServiceImpl(구현)
+│   ├─ service                    {Feature}Service(인터페이스), 스케줄러, 설정(*Properties)
+│   │   └─ impl                   {Feature}ServiceImpl(구현)
 │   ├─ repository                 {Entity}Repository, {Feature}QueryRepository
 │   ├─ domain                     {Entity}, enum, 값 객체
 │   ├─ dto                        {Feature}{Action}Request, {Feature}Response, {Feature}{Action}Command
@@ -204,10 +205,10 @@ public class ProductServiceImpl implements ProductService {
 3. Controller, Repository, Infra, Domain에는 `@Transactional`을 붙이지 않는다
 4. Service는 **Response DTO를 돌려준다.** Entity를 돌려주면 트랜잭션이 끝난 뒤 Controller에서 지연 로딩 예외가 나거나 Entity가 응답에 섞인다
 5. 다른 Service의 public 메서드를 부를 때 트랜잭션은 기본 전파(`REQUIRED`)로 합쳐진다. `REQUIRES_NEW`는 "바깥이 롤백돼도 남아야 하는 기록"처럼 이유를 설명할 수 있을 때만 쓴다
-6. **Service는 인터페이스(`{Feature}Service`)와 구현(`{Feature}ServiceImpl`)으로 나눈다.** Controller·다른 기능·스케줄러는 인터페이스만 주입받고, 구현 클래스를 직접 쓰지 않는다(구현 객체는 Spring이 인터페이스 자리에 넣어 준다)
+6. **Service는 인터페이스(`{Feature}Service`)와 구현(`{Feature}ServiceImpl`)으로 나눈다.** 인터페이스는 `service` 폴더에 모으고, 구현은 그 아래 `service/impl` 폴더에 둔다. Controller·다른 기능·스케줄러는 인터페이스만 주입받고, 구현 클래스를 직접 쓰지 않는다(구현 객체는 Spring이 인터페이스 자리에 넣어 준다)
    - 인터페이스에는 public 메서드 선언과 "무엇을 하나" 주석만 둔다. `@Transactional`, `@TransactionalEventListener`, `@Async`, `@ConditionalOnProperty`는 **구현 쪽**에 둔다
    - 이유: 다른 기능은 "무엇을 해 주나"만 알면 되고 "어떻게 하나"는 몰라야 한다. 인터페이스 파일만 읽으면 그 기능이 밖에 내놓은 일이 한눈에 보인다. 시험에서 가짜 구현으로 바꾸기도 쉽다
-   - `ArchitectureTest`가 지킨다: service 패키지의 `*Service`는 인터페이스, `*ServiceImpl`은 자기 자신 말고 아무도(다른 구현 포함) 직접 쓰지 않음, `@Service`는 `*ServiceImpl`에만
+   - `ArchitectureTest`가 지킨다: service 패키지의 `*Service`는 인터페이스, `*ServiceImpl`은 `service.impl`에만 있고 자기 자신 말고 아무도(다른 구현 포함) 직접 쓰지 않음, `@Service`는 `*ServiceImpl`에만
 
 ### 6.2 같은 클래스 안에서 부르면 `@Transactional`이 걸리지 않는다
 
@@ -599,7 +600,7 @@ infra.pg
 {base}.product
 ├─ controller/ProductController.java          POST /api/products, GET /api/products/{id}
 ├─ service/ProductService.java                인터페이스: create, get
-├─ service/ProductServiceImpl.java            구현: create(@Transactional), get(readOnly)
+├─ service/impl/ProductServiceImpl.java       구현: create(@Transactional), get(readOnly)
 ├─ repository/ProductRepository.java          JpaRepository<Product, Long> + existsByCode
 ├─ domain/Product.java                        Entity (§9 예시)
 ├─ domain/ProductStatus.java                  ON_SALE, STOPPED

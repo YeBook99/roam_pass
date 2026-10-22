@@ -95,6 +95,13 @@ class ArchitectureTest {
             .should(notUseOtherServiceImpl())
             .allowEmptyShould(true);
 
+    // §6.1-6: 구현(*ServiceImpl)은 service 아래 impl 폴더에만 둔다. service 폴더에는 인터페이스가 모여 있다
+    @ArchTest
+    static final ArchRule 구현은_impl_폴더에 = ArchRuleDefinition.classes()
+            .that().haveSimpleNameEndingWith("ServiceImpl")
+            .should().resideInAPackage(BASE + ".*.service.impl")
+            .allowEmptyShould(true);
+
     // §6.1-6: @Service는 구현 클래스에만 붙고, 구현 이름은 *ServiceImpl이다
     @ArchTest
     static final ArchRule Service_애노테이션은_구현에만 = ArchRuleDefinition.classes()

@@ -1,4 +1,4 @@
-package {{base}}.{{feature}}.service;
+package {{base}}.{{feature}}.service.impl;
 
 import {{base}}.global.error.BusinessException;
 import {{base}}.{{feature}}.domain.{{Entity}};
@@ -6,6 +6,7 @@ import {{base}}.{{feature}}.dto.{{Feature}}CreateCommand;
 import {{base}}.{{feature}}.dto.{{Feature}}Response;
 import {{base}}.{{feature}}.exception.{{Feature}}ErrorCode;
 import {{base}}.{{feature}}.repository.{{Entity}}Repository;
+import {{base}}.{{feature}}.service.{{Feature}}Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;

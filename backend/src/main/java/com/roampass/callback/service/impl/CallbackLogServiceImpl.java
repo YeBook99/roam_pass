@@ -1,7 +1,8 @@
-package com.roampass.callback.service;
+package com.roampass.callback.service.impl;
 
 import com.roampass.callback.domain.CallbackLog;
 import com.roampass.callback.repository.CallbackLogRepository;
+import com.roampass.callback.service.CallbackLogService;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;

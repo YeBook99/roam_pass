@@ -1,10 +1,11 @@
-package com.roampass.history.service;
+package com.roampass.history.service.impl;
 
 import com.roampass.history.domain.Actor;
 import com.roampass.history.domain.Signal;
 import com.roampass.history.domain.StatusHistory;
 import com.roampass.history.domain.TargetType;
 import com.roampass.history.repository.StatusHistoryRepository;
+import com.roampass.history.service.StatusHistoryService;
 import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
