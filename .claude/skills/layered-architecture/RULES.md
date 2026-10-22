@@ -10,6 +10,7 @@
 
 - Controller는 Service만 호출하고, Repository나 Dao를 직접 접근하지 않는다.
 - Service는 use case와 transaction boundary를 담당한다. transaction boundary는 service use case 단위로 설명한다.
+- Service는 인터페이스(`{Feature}Service`)와 구현(`{Feature}ServiceImpl`)으로 나누고, 부르는 쪽은 인터페이스만 의존한다.
 - 외부 HTTP 호출은 DB 트랜잭션 안에서 하지 않는다. 외부 호출이 있는 use case는 `TransactionTemplate`으로 트랜잭션 범위를 나눈다.
 - API DTO와 domain object를 분리한다.
 - Entity 또는 persistence model을 API response로 직접 노출하지 않는다.

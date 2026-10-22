@@ -1,0 +1,15 @@
+package {{base}}.{{feature}}.service;
+
+import {{base}}.{{feature}}.dto.{{Feature}}CreateCommand;
+import {{base}}.{{feature}}.dto.{{Feature}}Response;
+
+// {{featureLabel}} 기능이 밖에 내놓는 일. Controller·다른 기능은 이 인터페이스만 안다 (ARCHITECTURE.md §6.1-6)
+// 트랜잭션·애노테이션은 구현({{Feature}}ServiceImpl)에 둔다
+public interface {{Feature}}Service {
+
+    // {{featureLabel}}을 만든다. 같은 코드가 있으면 {{FEATURE}}_DUPLICATE_CODE
+    {{Feature}}Response create({{Feature}}CreateCommand command);
+
+    // 하나 조회. 없으면 {{FEATURE}}_NOT_FOUND
+    {{Feature}}Response get(Long id);
+}

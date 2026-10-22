@@ -1,0 +1,10 @@
+package {{base}}.{{feature}}.service;
+
+import {{base}}.{{feature}}.dto.{{Feature}}Response;
+
+// 외부 호출이 있는 use case의 인터페이스. 부르는 쪽은 이것만 안다 (ARCHITECTURE.md §6.1-6, §7)
+public interface {{Feature}}{{Action}}Service {
+
+    // {{action}}을 {{system}}에 요청하고 결과를 저장한다. 외부가 실패하면 요청 기록은 남는다(마무리 주체는 설계안에)
+    {{Feature}}Response {{action}}(Long id);
+}

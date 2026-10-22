@@ -30,8 +30,9 @@
 | `init/test/ArchitectureTest.java.tmpl` | `src/test/java/{{base}}/ArchitectureTest.java` | init |
 | `init/test/support/IntegrationTestSupport.java.tmpl` | `src/test/java/{{base}}/support/` | init |
 | `feature/main/controller/Controller` | `{{feature}}/controller/{{Feature}}Controller.java` | feature |
-| `feature/main/service/Service` | `{{feature}}/service/{{Feature}}Service.java` | feature |
-| `feature/main/service/ExternalCallService` | `{{feature}}/service/{{Feature}}{{Action}}Service.java` (외부 호출이 있을 때) | feature |
+| `feature/main/service/ServiceInterface` | `{{feature}}/service/{{Feature}}Service.java` (인터페이스) | feature |
+| `feature/main/service/Service` | `{{feature}}/service/{{Feature}}ServiceImpl.java` (구현) | feature |
+| `feature/main/service/ExternalCallService` | `{{feature}}/service/{{Feature}}{{Action}}ServiceImpl.java` (외부 호출이 있을 때. 인터페이스는 `feature/main/service/ExternalCallServiceInterface` → `{{Feature}}{{Action}}Service.java`) | feature |
 | `feature/main/repository/Repository` | `{{feature}}/repository/{{Entity}}Repository.java` | feature |
 | `feature/main/repository/QueryRepository` | `{{feature}}/repository/{{Feature}}QueryRepository.java` (조인 조회 화면이 있을 때) | feature |
 | `feature/main/domain/Entity` | `{{feature}}/domain/{{Entity}}.java` | feature |

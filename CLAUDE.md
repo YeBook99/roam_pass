@@ -12,7 +12,7 @@
 
 ## 2. 기술 스택 (근거: `docs/02_기술선택_ADR.md`)
 
-- Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway. 구조는 레이어드 설계 기준(`.claude/skills/layered-architecture/ARCHITECTURE.md`, ADR-15)
+- Backend: Java 17, Spring Boot 3.5, Gradle wrapper, Spring Data JPA(+ 네이티브 조건부 쿼리), Flyway. 구조는 레이어드 설계 기준(`.claude/skills/layered-architecture/ARCHITECTURE.md`, ADR-15). 서비스는 인터페이스 + `*ServiceImpl`로 나누고 부르는 쪽은 인터페이스만 쓴다(ADR-18)
 - Frontend: Next.js 15 App Router, TypeScript, TanStack Query. 구조는 프론트 설계 기준(`.claude/skills/nextjs-architecture/ARCHITECTURE.md`, ADR-17)
 - DB: PostgreSQL 16 (로컬 docker compose, 배포 AWS RDS) / 배포: AWS EC2
 - 외부 연동(PG·공급사 호출): `infra.{시스템}`의 Client 인터페이스 뒤에 둔다
