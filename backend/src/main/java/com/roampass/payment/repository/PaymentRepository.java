@@ -21,6 +21,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     //  - 같은 주문에 READY 결제가 이미 있음 (부분 유니크 ux_payment_order_ready, 다른 탭 동시 결제)
     // 대상을 (idempotency_key)로만 정하면, 같은 키 요청 두 개가 동시에 올 때 ux_payment_order_ready에 먼저 걸려
     // 예외가 났다(같은 키인데 409, 2026-10-21 동시 요청 재현). 0이면 누가 먼저 만들었는지는 호출한 쪽이 키로 다시 찾아 판단한다
+    // 주의: 충돌 대상을 정하지 않아 payment의 모든 UNIQUE가 0행이 된다. payment에 UNIQUE를 새로 만들거나 INSERT 컬럼을 늘리면
+    //       그 위반이 PAYMENT_IN_PROGRESS로 잘못 바뀌지 않는지 PaymentService.start를 다시 본다
     @Modifying
     @Query(value = """
             INSERT INTO payment (order_id, idempotency_key, amount, status, requested_at, created_at, updated_at)
