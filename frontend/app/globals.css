@@ -169,6 +169,12 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
 
 .code { display: block; width: 100%; padding: 12px; background: var(--ground); border-radius: var(--radius-control); font-family: var(--font-mono); font-size: 13px; word-break: break-all; }
 .error { color: var(--negative); }
+
+/* 시연 설정 화면: 상황 버튼 목록, 켜진 상황은 연한 노란 바탕, 맨 위 경고 */
+.scenario-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.scenario { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--rule); border-radius: var(--radius-control); }
+.scenario-on { background: var(--pill-warning-bg); border-color: #fde68a; }
+.notice { padding: 10px 14px; border: 1px solid #fde68a; border-radius: var(--radius-control); background: var(--pill-warning-bg); color: var(--pill-warning-ink); }
 ul { margin: 0; padding-left: 20px; }
 li + li { margin-top: 6px; }
 

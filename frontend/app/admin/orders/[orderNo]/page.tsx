@@ -5,6 +5,7 @@ import { KstTime } from '@/components/KstTime';
 import { StatusPill } from '@/components/StatusPill';
 import { RefreshControls } from '@/features/admin/components/RefreshControls';
 import { getAdminOrder } from '@/features/admin/server';
+import { SupplierStatePanel } from '@/features/mock/components/SupplierStatePanel';
 import { INSTALL_STATUS_TONE } from '@/features/issue/types';
 import { ORDER_STATUS_TONE } from '@/features/order/types';
 import { PAYMENT_STATUS_TONE } from '@/features/payment/types';
@@ -155,6 +156,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           />
         </section>
       </div>
+
+      {/* 시연용: SIM이 발급된 주문이면 가짜 공급사의 설치·개통 상태를 여기서 바로 바꿀 수 있다 (시연 설정 화면과 같은 조각) */}
+      {order.iccid && <SupplierStatePanel iccid={order.iccid} />}
     </div>
   );
 }
